@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Tela de login - Faça Login </title>
+
+    <link rel="stylesheet" href="Login.css">
+
+</head>
+
+<body>
+    <header id="barra-superior">
+        <div class="container" id="conteudo-barra">
+            <span id="nome-projeto">Projeto Integrador</span>
+            <span>Área de acesso</span>
+        </div>
+    </header>
+
+    <main id="area-login">
+        <div id="box-login">
+            <div id="cabecalho">
+                <h1>Faça Login</h1>
+                <p id="descricao-login">Acesse sua conta para continuar.</p>
+                <p id="texto-apoio">Informe seu e-mail e sua senha nos campos ao lado.</p>
+            </div>
+
+            <div id="box-formulario">
+                <div id="titulo-box"><h2 id="titulo-formulario">Acesso ao sistema</h2></div>
+                <!-- Parte visual: os dados não são enviados nem armazenados. -->
+                <form id="formulario-login" aria-labelledby="titulo-formulario">
+
+                    <div class="box-campo" id="box-email">
+                        <label for="email">E-mail</label>
+                        <input type="email" id="email" placeholder="Seu endereço de e-mail" autocomplete="username">
+                    </div>
+
+                    <div class="box-campo" id="box-senha">
+                        <label for="senha">Senha</label>
+                        <input type="password" id="senha" placeholder="Digite sua senha" autocomplete="current-password">
+                    </div>
+
+                    <div id="box-acoes">
+                        <button type="button" id="botao-entrar" aria-describedby="aviso-prototipo">Entrar</button>
+                    </div>
+                    <p id="aviso-prototipo">Prévia visual: o acesso ainda não está disponível.</p>
+                </form>
+            </div>
+        </div>
+
+    </main>
+        <footer id="rodape">
+            <div class="container" id="conteudo-rodape">
+            <span>Português (Brasil)</span>
+            <span>Projeto Integrador · Área de acesso</span>
+            </div>
+        </footer>
+
+
+</body>
+</html>
+
