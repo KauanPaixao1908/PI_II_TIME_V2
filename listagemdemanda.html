@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listagem de Demandas - Projeto Integrador</title>
+    <link rel="stylesheet" href="listagemdemanda.css">
+</head>
+<body>
+    <header id="barra-superior">
+        <div class="container" id="conteudo-barra">
+            <span id="nome-projeto">Projeto Integrador</span>
+            <nav id="navegacao-principal">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="listagemdemanda.html" class="link-ativo">Demandas</a>
+                <a href="login.html">Sair</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container" id="area-demandas">
+        <div id="cabecalho">
+            <div id="cabecalho-texto">
+                <h1>Listagem de Demandas</h1>
+                <p id="descricao-pagina">Encontre demandas por título, descrição ou critérios específicos.</p>
+            </div>
+            <a href="cadastro-demanda.html" id="botao-nova-demanda">+ Nova demanda</a>
+        </div>
+
+        <section id="box-filtros" aria-labelledby="titulo-filtros">
+            <div class="faixa-azul"><h2 id="titulo-filtros">Filtros e busca</h2></div>
+            <form id="form-filtros">
+                <div class="campo" id="campo-busca">
+                    <label for="busca">Buscar por título ou descrição</label>
+                    <input type="search" id="busca" placeholder="Digite uma palavra ou trecho..." aria-describedby="ajuda-filtros">
+                </div>
+                <p id="ajuda-filtros">Combine os critérios para refinar os resultados.</p>
+                <div class="linha-filtros">
+                    <div class="campo">
+                        <label for="status">Status</label>
+                        <select id="status"><option value="">Todos</option><option>Pendente</option><option>Em andamento</option><option>Concluída</option></select>
+                    </div>
+                    <div class="campo">
+                        <label for="prioridade">Prioridade</label>
+                        <select id="prioridade"><option value="">Todos</option><option>Alta</option><option>Média</option><option>Baixa</option></select>
+                    </div>
+                    <div class="campo">
+                        <label for="tipo">Tipo</label>
+                        <select id="tipo"><option value="">Todos</option><option>Funcionalidade</option><option>Correção</option><option>Melhoria</option></select>
+                    </div>
+                    <div class="campo">
+                        <label for="responsavel">Responsável</label>
+                        <select id="responsavel"><option value="">Todos</option><option>Ana Martins</option><option>Bruno Lima</option><option>Carla Souza</option><option>Diego Santos</option></select>
+                    </div>
+                    <div class="campo">
+                        <label for="projeto">Projeto</label>
+                        <select id="projeto"><option value="">Todos</option><option>Portal de Demandas</option><option>Documentação do PI</option></select>
+                    </div>
+                </div>
+                <div class="linha-acoes">
+                    <div class="campo">
+                        <label for="ordenacao">Ordenar por</label>
+                        <select id="ordenacao">
+                            <option value="criacao-desc">Criação: mais recentes primeiro</option>
+                            <option value="criacao-asc">Criação: mais antigas primeiro</option>
+                            <option value="prioridade-asc">Prioridade: alta para baixa</option>
+                            <option value="prioridade-desc">Prioridade: baixa para alta</option>
+                            <option value="prazo-asc">Prazo: mais próximo primeiro</option>
+                            <option value="prazo-desc">Prazo: mais distante primeiro</option>
+                            <option value="status-asc">Status: A–Z</option>
+                            <option value="status-desc">Status: Z–A</option>
+                        </select>
+                    </div>
+                    <div id="botoes-filtros">
+                        <button type="submit" class="botao-primario">Aplicar filtros</button>
+                        <button type="reset" class="botao-secundario">Limpar filtros</button>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <section id="box-listagem" aria-labelledby="titulo-listagem">
+            <div id="titulo-box">
+                <h2 id="titulo-listagem">Resultados da busca</h2>
+                <span id="contador-resultados" role="status" aria-live="polite">4 demandas</span>
+            </div>
+            <div id="box-tabela" tabindex="0" role="region" aria-label="Tabela de demandas com rolagem horizontal">
+                <table id="tabela-demandas">
+                    <caption>Dados fictícios para demonstração da tela.</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Título</th>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Prioridade</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Projeto</th>
+                            <th scope="col">Responsável</th>
+                            <th scope="col">Data de criação</th>
+                            <th scope="col">Prazo de finalização</th>
+                            <th scope="col">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="titulo-demanda">Criar tela de login</td>
+                            <td>Funcionalidade</td>
+                            <td><span class="etiqueta alta">Alta</span></td>
+                            <td><span class="etiqueta andamento">Em andamento</span></td>
+                            <td>Portal de Demandas</td>
+                            <td>Ana Martins</td>
+                            <td class="data">07/09/2026</td>
+                            <td class="data">14/09/2026</td>
+                            <td><a class="botao-detalhes" href="#demanda-001" aria-label="Ver detalhes: Criar tela de login">Ver detalhes</a></td>
+                        </tr>
+                        <tr>
+                            <td class="titulo-demanda">Corrigir listagem de projetos</td>
+                            <td>Correção</td>
+                            <td><span class="etiqueta alta">Alta</span></td>
+                            <td><span class="etiqueta pendente">Pendente</span></td>
+                            <td>Portal de Demandas</td>
+                            <td>Bruno Lima</td>
+                            <td class="data">08/09/2026</td>
+                            <td class="data">16/09/2026</td>
+                            <td><a class="botao-detalhes" href="#demanda-002" aria-label="Ver detalhes: Corrigir listagem de projetos">Ver detalhes</a></td>
+                        </tr>
+                        <tr>
+                            <td class="titulo-demanda">Organizar documentação</td>
+                            <td>Melhoria</td>
+                            <td><span class="etiqueta baixa">Baixa</span></td>
+                            <td><span class="etiqueta concluida">Concluída</span></td>
+                            <td>Documentação do PI</td>
+                            <td>Carla Souza</td>
+                            <td class="data">05/09/2026</td>
+                            <td class="data">12/09/2026</td>
+                            <td><a class="botao-detalhes" href="#demanda-003" aria-label="Ver detalhes: Organizar documentação">Ver detalhes</a></td>
+                        </tr>
+                        <tr>
+                            <td class="titulo-demanda">Criar cadastro de demandas</td>
+                            <td>Funcionalidade</td>
+                            <td><span class="etiqueta media">Média</span></td>
+                            <td><span class="etiqueta pendente">Pendente</span></td>
+                            <td>Portal de Demandas</td>
+                            <td>Diego Santos</td>
+                            <td class="data">09/09/2026</td>
+                            <td class="data">20/09/2026</td>
+                            <td><a class="botao-detalhes" href="#demanda-004" aria-label="Ver detalhes: Criar cadastro de demandas">Ver detalhes</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p id="sem-resultados" hidden>Nenhuma demanda encontrada. Altere a busca ou limpe os filtros.</p>
+            </div>
+        </section>
+
+        <section class="box-detalhes" id="demanda-001" aria-labelledby="titulo-001">
+            <div class="cabecalho-detalhes">
+                <h2 id="titulo-001">Demanda 001 · Criar tela de login</h2>
+                <a href="#box-listagem" class="fechar-detalhes">Fechar detalhes</a>
+            </div>
+            <div class="conteudo-detalhes">
+                <p>Criar os campos de e-mail e senha e aplicar a identidade visual do projeto.</p>
+                <dl>
+                    <div><dt>Tipo</dt><dd>Funcionalidade</dd></div>
+                    <div><dt>Prioridade</dt><dd>Alta</dd></div>
+                    <div><dt>Status</dt><dd>Em andamento</dd></div>
+                    <div><dt>Projeto</dt><dd>Portal de Demandas</dd></div>
+                    <div><dt>Responsável</dt><dd>Ana Martins</dd></div>
+                    <div><dt>Data de criação</dt><dd>07/09/2026</dd></div>
+                    <div><dt>Prazo de finalização</dt><dd>14/09/2026</dd></div>
+                </dl>
+            </div>
+        </section>
+
+        <section class="box-detalhes" id="demanda-002" aria-labelledby="titulo-002">
+            <div class="cabecalho-detalhes">
+                <h2 id="titulo-002">Demanda 002 · Corrigir listagem de projetos</h2>
+                <a href="#box-listagem" class="fechar-detalhes">Fechar detalhes</a>
+            </div>
+            <div class="conteudo-detalhes">
+                <p>Revisar a exibição dos nomes dos projetos e a organização da listagem.</p>
+                <dl>
+                    <div><dt>Tipo</dt><dd>Correção</dd></div>
+                    <div><dt>Prioridade</dt><dd>Alta</dd></div>
+                    <div><dt>Status</dt><dd>Pendente</dd></div>
+                    <div><dt>Projeto</dt><dd>Portal de Demandas</dd></div>
+                    <div><dt>Responsável</dt><dd>Bruno Lima</dd></div>
+                    <div><dt>Data de criação</dt><dd>08/09/2026</dd></div>
+                    <div><dt>Prazo de finalização</dt><dd>16/09/2026</dd></div>
+                </dl>
+            </div>
+        </section>
+
+        <section class="box-detalhes" id="demanda-003" aria-labelledby="titulo-003">
+            <div class="cabecalho-detalhes">
+                <h2 id="titulo-003">Demanda 003 · Organizar documentação</h2>
+                <a href="#box-listagem" class="fechar-detalhes">Fechar detalhes</a>
+            </div>
+            <div class="conteudo-detalhes">
+                <p>Organizar os requisitos e atualizar a documentação do projeto.</p>
+                <dl>
+                    <div><dt>Tipo</dt><dd>Melhoria</dd></div>
+                    <div><dt>Prioridade</dt><dd>Baixa</dd></div>
+                    <div><dt>Status</dt><dd>Concluída</dd></div>
+                    <div><dt>Projeto</dt><dd>Documentação do PI</dd></div>
+                    <div><dt>Responsável</dt><dd>Carla Souza</dd></div>
+                    <div><dt>Data de criação</dt><dd>05/09/2026</dd></div>
+                    <div><dt>Prazo de finalização</dt><dd>12/09/2026</dd></div>
+                </dl>
+            </div>
+        </section>
+
+        <section class="box-detalhes" id="demanda-004" aria-labelledby="titulo-004">
+            <div class="cabecalho-detalhes">
+                <h2 id="titulo-004">Demanda 004 · Criar cadastro de demandas</h2>
+                <a href="#box-listagem" class="fechar-detalhes">Fechar detalhes</a>
+            </div>
+            <div class="conteudo-detalhes">
+                <p>Preparar o formulário com os campos necessários para cadastrar uma demanda.</p>
+                <dl>
+                    <div><dt>Tipo</dt><dd>Funcionalidade</dd></div>
+                    <div><dt>Prioridade</dt><dd>Média</dd></div>
+                    <div><dt>Status</dt><dd>Pendente</dd></div>
+                    <div><dt>Projeto</dt><dd>Portal de Demandas</dd></div>
+                    <div><dt>Responsável</dt><dd>Diego Santos</dd></div>
+                    <div><dt>Data de criação</dt><dd>09/09/2026</dd></div>
+                    <div><dt>Prazo de finalização</dt><dd>20/09/2026</dd></div>
+                </dl>
+            </div>
+        </section>
+    </main>
+
+    <footer id="rodape">
+        <div class="container" id="conteudo-rodape">
+            <span>Português (Brasil)</span>
+            <span>Projeto Integrador · Demandas</span>
+        </div>
+    </footer>
+</body>
+</html>
