@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Projeto Integrador</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <header id="barra-superior">
+        <div class="container" id="conteudo-barra">
+            <span id="nome-projeto">Projeto Integrador</span>
+            <nav id="navegacao-principal">
+                <a href="dashboard.html" class="link-ativo">Dashboard</a>
+                <a href="listagemdemanda.html">Demandas</a>
+                <a href="login.html">Sair</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container" id="area-dashboard">
+        <div id="cabecalho">
+            <div id="cabecalho-texto">
+                <h1>Dashboard</h1>
+                <p id="descricao-pagina">Visão geral das demandas de desenvolvimento em andamento.</p>
+            </div>
+            <a href="cadastro-demanda.html" id="botao-nova-demanda">+ Nova demanda</a>
+        </div>
+
+        <section id="box-filtros" aria-labelledby="titulo-filtros">
+            <div class="faixa-azul"><h2 id="titulo-filtros">Filtros do painel</h2></div>
+            <form id="form-filtros">
+                <div class="linha-filtros">
+                    <div class="campo">
+                        <label for="projeto">Projeto</label>
+                        <select id="projeto">
+                            <option value="">Todos os projetos</option>
+                            <option>Portal de Demandas</option>
+                            <option>Documentação do PI</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="periodo">Período</label>
+                        <select id="periodo">
+                            <option value="30">Últimos 30 dias</option>
+                            <option value="7">Últimos 7 dias</option>
+                            <option value="0">Todo o período</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="responsavel">Responsável</label>
+                        <select id="responsavel">
+                            <option value="">Todos</option>
+                            <option>Ana Martins</option>
+                            <option>Bruno Lima</option>
+                            <option>Carla Souza</option>
+                            <option>Diego Santos</option>
+                        </select>
+                    </div>
+                    <div id="botoes-filtros">
+                        <button type="submit" class="botao-primario">Aplicar filtros</button>
+                        <button type="reset" class="botao-secundario">Limpar filtros</button>
+                    </div>
+                </div>
+                <p id="ajuda-filtros">Prévia visual: os números abaixo são fictícios e ainda não mudam com os filtros.</p>
+            </form>
+        </section>
+
+        <section id="box-indicadores" aria-labelledby="titulo-indicadores">
+            <h2 id="titulo-indicadores" class="titulo-secao">Indicadores gerais</h2>
+            <div class="grade-indicadores">
+                <article class="cartao-indicador">
+                    <span class="etiqueta neutra">Total</span>
+                    <strong class="numero-indicador">24</strong>
+                    <span class="nota-indicador">Demandas em 2 projetos ativos</span>
+                </article>
+                <article class="cartao-indicador">
+                    <span class="etiqueta pendente">Pendentes</span>
+                    <strong class="numero-indicador">9</strong>
+                    <span class="nota-indicador">37,5% do total</span>
+                </article>
+                <article class="cartao-indicador">
+                    <span class="etiqueta andamento">Em andamento</span>
+                    <strong class="numero-indicador">7</strong>
+                    <span class="nota-indicador">29,2% do total</span>
+                </article>
+                <article class="cartao-indicador">
+                    <span class="etiqueta concluida">Concluídas</span>
+                    <strong class="numero-indicador">8</strong>
+                    <span class="nota-indicador">33,3% do total</span>
+                </article>
+                <article class="cartao-indicador">
+                    <span class="etiqueta alta">Atrasadas</span>
+                    <strong class="numero-indicador">3</strong>
+                    <span class="nota-indicador">Prazo vencido e sem conclusão</span>
+                </article>
+            </div>
+        </section>
+
+        <div class="grade-duas">
+            <section class="cartao" aria-labelledby="titulo-status">
+                <div class="faixa-azul"><h2 id="titulo-status">Demandas por status</h2></div>
+                <ul class="lista-barras">
+                    <li class="linha-barra">
+                        <div class="topo-barra">
+                            <span class="rotulo-barra">Pendente</span>
+                            <span class="valor-barra">9 demandas · 37,5%</span>
+                        </div>
+                        <div class="trilha-barra" aria-hidden="true">
+                            <div class="preenchimento-barra barra-pendente" style="width: 100%;"></div>
+                        </div>
+                    </li>
+                    <li class="linha-barra">
+                        <div class="topo-barra">
+                            <span class="rotulo-barra">Concluída</span>
+                            <span class="valor-barra">8 demandas · 33,3%</span>
+                        </div>
+                        <div class="trilha-barra" aria-hidden="true">
+                            <div class="preenchimento-barra barra-concluida" style="width: 88.9%;"></div>
+                        </div>
+                    </li>
+                    <li class="linha-barra">
+                        <div class="topo-barra">
+                            <span class="rotulo-barra">Em andamento</span>
+                            <span class="valor-barra">7 demandas · 29,2%</span>
+                        </div>
+                        <div class="trilha-barra" aria-hidden="true">
+                            <div class="preenchimento-barra barra-andamento" style="width: 77.8%;"></div>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="cartao" aria-labelledby="titulo-prioridade">
+                <div class="faixa-azul"><h2 id="titulo-prioridade">Demandas por prioridade</h2></div>
+                <ul class="lista-barras">
+                    <li class="linha-barra">
+                        <div class="topo-barra">
+                            <span class="rotulo-barra">Média</span>
+                            <span class="valor-barra">10 demandas · 41,7%</span>
+                        </div>
+                        <div class="trilha-barra" aria-hidden="true">
+                            <div class="preenchimento-barra barra-media" style="width: 100%;"></div>
+                        </div>
+                    </li>
+                    <li class="linha-barra">
+                        <div class="topo-barra">
+                            <span class="rotulo-barra">Alta</span>
+                            <span class="valor-barra">8 demandas · 33,3%</span>
+                        </div>
+                        <div class="trilha-barra" aria-hidden="true">
+                            <div class="preenchimento-barra barra-alta" style="width: 80%;"></div>
+                        </div>
+                    </li>
+                    <li class="linha-barra">
+                        <div class="topo-barra">
+                            <span class="rotulo-barra">Baixa</span>
+                            <span class="valor-barra">6 demandas · 25,0%</span>
+                        </div>
+                        <div class="trilha-barra" aria-hidden="true">
+                            <div class="preenchimento-barra barra-baixa" style="width: 60%;"></div>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+        </div>
+
+        <div class="grade-duas">
+            <section class="cartao" aria-labelledby="titulo-tipo">
+                <div class="faixa-azul"><h2 id="titulo-tipo">Demandas por tipo</h2></div>
+                <ul class="lista-barras">
+                    <li class="linha-barra">
+                        <div class="topo-barra">
+                            <span class="rotulo-barra">Funcionalidade</span>
+                            <span class="valor-barra">11 demandas · 45,8%</span>
+                        </div>
+                        <div class="trilha-barra" aria-hidden="true">
+                            <div class="preenchimento-barra" style="width: 100%;"></div>
+                        </div>
+                    </li>
+                    <li class="linha-barra">
+                        <div class="topo-barra">
+                            <span class="rotulo-barra">Correção</span>
+                            <span class="valor-barra">7 demandas · 29,2%</span>
+                        </div>
+                        <div class="trilha-barra" aria-hidden="true">
+                            <div class="preenchimento-barra" style="width: 63.6%;"></div>
+                        </div>
+                    </li>
+                    <li class="linha-barra">
+                        <div class="topo-barra">
+                            <span class="rotulo-barra">Melhoria</span>
+                            <span class="valor-barra">4 demandas · 16,7%</span>
+                        </div>
+                        <div class="trilha-barra" aria-hidden="true">
+                            <div class="preenchimento-barra" style="width: 36.4%;"></div>
+                        </div>
+                    </li>
+                    <li class="linha-barra">
+                        <div class="topo-barra">
+                            <span class="rotulo-barra">Documentação</span>
+                            <span class="valor-barra">2 demandas · 8,3%</span>
+                        </div>
+                        <div class="trilha-barra" aria-hidden="true">
+                            <div class="preenchimento-barra" style="width: 18.2%;"></div>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="cartao" aria-labelledby="titulo-carga">
+                <div class="faixa-azul"><h2 id="titulo-carga">Carga por responsável</h2></div>
+                <div class="box-tabela" tabindex="0" role="region" aria-label="Tabela de carga por responsável com rolagem horizontal">
+                    <table class="tabela-carga">
+                        <thead>
+                            <tr>
+                                <th scope="col">Responsável</th>
+                                <th scope="col">Pendentes</th>
+                                <th scope="col">Em andamento</th>
+                                <th scope="col">Concluídas</th>
+                                <th scope="col">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">Ana Martins</th>
+                                <td>2</td>
+                                <td>2</td>
+                                <td>2</td>
+                                <td class="celula-total">6</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Bruno Lima</th>
+                                <td>2</td>
+                                <td>2</td>
+                                <td>1</td>
+                                <td class="celula-total">5</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Carla Souza</th>
+                                <td>1</td>
+                                <td>1</td>
+                                <td>3</td>
+                                <td class="celula-total">5</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Diego Santos</th>
+                                <td>2</td>
+                                <td>1</td>
+                                <td>1</td>
+                                <td class="celula-total">4</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Sem responsável</th>
+                                <td>2</td>
+                                <td>1</td>
+                                <td>1</td>
+                                <td class="celula-total">4</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <section class="cartao" id="box-prazos" aria-labelledby="titulo-prazos">
+            <div id="titulo-box">
+                <h2 id="titulo-prazos">Prazos mais próximos</h2>
+                <a href="listagemdemanda.html" class="link-faixa">Ver todas as demandas</a>
+            </div>
+            <div class="box-tabela" tabindex="0" role="region" aria-label="Tabela de prazos com rolagem horizontal">
+                <table class="tabela-prazos">
+                    <caption>Dados fictícios para demonstração da tela. Referência: 08/09/2026.</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Demanda</th>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Prioridade</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Responsável</th>
+                            <th scope="col">Prazo</th>
+                            <th scope="col">Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="titulo-demanda">Padronizar mensagens de erro</td>
+                            <td>Melhoria</td>
+                            <td><span class="etiqueta media">Média</span></td>
+                            <td><span class="etiqueta pendente">Pendente</span></td>
+                            <td>Sem responsável</td>
+                            <td class="data">03/09/2026</td>
+                            <td><span class="etiqueta alta">Atrasada há 5 dias</span></td>
+                        </tr>
+                        <tr>
+                            <td class="titulo-demanda">Revisar diagrama de classes</td>
+                            <td>Documentação</td>
+                            <td><span class="etiqueta alta">Alta</span></td>
+                            <td><span class="etiqueta andamento">Em andamento</span></td>
+                            <td>Bruno Lima</td>
+                            <td class="data">06/09/2026</td>
+                            <td><span class="etiqueta alta">Atrasada há 2 dias</span></td>
+                        </tr>
+                        <tr>
+                            <td class="titulo-demanda">Ajustar contraste dos botões</td>
+                            <td>Melhoria</td>
+                            <td><span class="etiqueta baixa">Baixa</span></td>
+                            <td><span class="etiqueta pendente">Pendente</span></td>
+                            <td>Carla Souza</td>
+                            <td class="data">07/09/2026</td>
+                            <td><span class="etiqueta alta">Atrasada há 1 dia</span></td>
+                        </tr>
+                        <tr>
+                            <td class="titulo-demanda">Criar tela de login</td>
+                            <td>Funcionalidade</td>
+                            <td><span class="etiqueta alta">Alta</span></td>
+                            <td><span class="etiqueta andamento">Em andamento</span></td>
+                            <td>Ana Martins</td>
+                            <td class="data">14/09/2026</td>
+                            <td><span class="etiqueta neutra">Faltam 6 dias</span></td>
+                        </tr>
+                        <tr>
+                            <td class="titulo-demanda">Corrigir listagem de projetos</td>
+                            <td>Correção</td>
+                            <td><span class="etiqueta alta">Alta</span></td>
+                            <td><span class="etiqueta pendente">Pendente</span></td>
+                            <td>Bruno Lima</td>
+                            <td class="data">16/09/2026</td>
+                            <td><span class="etiqueta neutra">Faltam 8 dias</span></td>
+                        </tr>
+                        <tr>
+                            <td class="titulo-demanda">Criar cadastro de demandas</td>
+                            <td>Funcionalidade</td>
+                            <td><span class="etiqueta media">Média</span></td>
+                            <td><span class="etiqueta pendente">Pendente</span></td>
+                            <td>Diego Santos</td>
+                            <td class="data">20/09/2026</td>
+                            <td><span class="etiqueta neutra">Faltam 12 dias</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer id="rodape">
+        <div class="container" id="conteudo-rodape">
+            <span>Português (Brasil)</span>
+            <span>Projeto Integrador · Dashboard</span>
+        </div>
+    </footer>
+</body>
+</html>
