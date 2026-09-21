@@ -1,0 +1,184 @@
+/* Configuração geral */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #f4f6f8;
+    color: #222;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.container {
+    width: 90%;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* Cabeçalho escuro */
+#barra-superior {
+    background-color: #212529;
+    color: white;
+    padding: 18px 0;
+}
+
+#conteudo-barra {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#nome-projeto {
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+/* Área principal para computador */
+#area-login {
+    width: 90%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 64px 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+#box-login {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 64px;
+}
+
+#cabecalho {
+    flex: 1;
+}
+
+h1 {
+    margin: 0 0 12px;
+    color: #1f2937;
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+#descricao-login {
+    margin: 0 0 12px;
+    color: #555;
+    font-size: 1.05rem;
+}
+
+#texto-apoio {
+    max-width: 340px;
+    margin: 0;
+    color: #555;
+}
+
+/* Caixa branca com faixa azul */
+#box-formulario {
+    flex: 1;
+    min-width: 360px;
+    overflow: hidden;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    background-color: white;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+#titulo-box {
+    padding: 16px 28px;
+    background-color: #0d6efd;
+    color: white;
+}
+
+h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+#formulario-login {
+    padding: 28px;
+}
+
+.box-campo {
+    margin-bottom: 20px;
+}
+
+.box-campo label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.box-campo input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #adb5bd;
+    border-radius: 6px;
+    background-color: white;
+    color: #222;
+    font: inherit;
+}
+
+.box-campo input::placeholder {
+    color: #6c757d;
+}
+
+.box-campo input:focus {
+    border-color: #86b7fe;
+    outline: 3px solid #c2d9ff;
+}
+
+#box-acoes {
+    display: flex;
+    margin-top: 26px;
+}
+
+#botao-entrar {
+    min-height: 46px;
+    padding: 10px 30px;
+    border: 1px solid #0d6efd;
+    border-radius: 6px;
+    background-color: #0d6efd;
+    color: white;
+    font: inherit;
+    cursor: pointer;
+}
+
+#botao-entrar:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+#botao-entrar:focus-visible {
+    outline: 3px solid #86b7fe;
+    outline-offset: 3px;
+}
+
+#aviso-prototipo {
+    margin: 20px 0 0;
+    color: #626970;
+    font-size: 0.875rem;
+}
+
+/* Rodapé */
+#rodape {
+    padding: 20px 0;
+    background-color: #212529;
+    color: #dee2e6;
+    font-size: 0.875rem;
+}
+
+#conteudo-rodape {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+}
