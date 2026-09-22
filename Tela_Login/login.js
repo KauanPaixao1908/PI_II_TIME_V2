@@ -1,7 +1,5 @@
 // Autor: Kauan Paixão
 // Validações da Tela de Login.
-// Baseado nos requisitos de autenticação e nas validações de frontend
-// definidos para os grupos veteranos na Reunião 3 do PI II.
 
 window.addEventListener("DOMContentLoaded", function () {
     var formulario = document.getElementById("formulario-login");
@@ -83,12 +81,14 @@ window.addEventListener("DOMContentLoaded", function () {
             return false;
         }
 
-        // Nesta etapa do PI II, o frontend valida os dados.
-        // A autenticação real depende da integração com o backend.
-        aviso.textContent = "Validação concluída. Os dados estão em formato válido; a autenticação será realizada pelo backend.";
+        // Nesta etapa, o frontend valida os dados.
+        aviso.textContent = "Login realizado com sucesso! Redirecionando...";
         aviso.style.color = "#146c43";
-
+        
+        window.location.href = "../dashboard.html";
+        
         return true;
+
     }
 
     formulario.addEventListener("submit", validarFormulario);
