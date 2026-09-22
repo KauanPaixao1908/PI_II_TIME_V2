@@ -1,3 +1,4 @@
+<!-- Autor: Bruno Mareto -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -29,10 +30,11 @@
 
         <section id="box-filtros" aria-labelledby="titulo-filtros">
             <div class="faixa-azul"><h2 id="titulo-filtros">Filtros e busca</h2></div>
-            <form id="form-filtros">
+            <form id="form-filtros" novalidate>
                 <div class="campo" id="campo-busca">
                     <label for="busca">Buscar por título ou descrição</label>
-                    <input type="search" id="busca" placeholder="Digite uma palavra ou trecho..." aria-describedby="ajuda-filtros">
+                    <input type="search" id="busca" placeholder="Digite uma palavra ou trecho..." aria-describedby="ajuda-filtros erro-busca" minlength="2" maxlength="60">
+                    <span class="erro-campo" id="erro-busca" role="alert"></span>
                 </div>
                 <p id="ajuda-filtros">Combine os critérios para refinar os resultados.</p>
                 <div class="linha-filtros">
@@ -76,6 +78,7 @@
                         <button type="reset" class="botao-secundario">Limpar filtros</button>
                     </div>
                 </div>
+                <p id="status-formulario" role="status" aria-live="polite" hidden></p>
             </form>
         </section>
 
@@ -234,5 +237,7 @@
             <span>Projeto Integrador · Demandas</span>
         </div>
     </footer>
+
+    <script src="listagemdemanda.js"></script>
 </body>
 </html>
