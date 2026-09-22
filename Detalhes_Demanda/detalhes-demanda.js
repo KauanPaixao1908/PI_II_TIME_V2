@@ -1,6 +1,6 @@
 // Autor: Kauan Paixão
 // Validação dos dados exibidos na tela de Detalhes da Demanda.
-// Baseado nos campos, tipos, prioridades e status definidos no escopo do PI II.
+
 
 window.addEventListener("DOMContentLoaded", function () {
     var titulo = document.getElementById("titulo-demanda");
