@@ -1,0 +1,12 @@
+# Autor: Bruno Mareto
+# Lista de arquivos e pastas que o Git deve ignorar (não enviar ao GitHub).
+
+# Bibliotecas baixadas pelo "npm install".
+# Qualquer pessoa recria esta pasta rodando "npm install", então ela não vai para o repositório.
+node_modules/
+
+# JavaScript gerado automaticamente quando o TypeScript é compilado ("npm run build").
+dist/
+
+# Arquivo de variáveis de ambiente (senhas, chaves). Nunca deve ir para o GitHub.
+.env

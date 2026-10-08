@@ -1,8 +1,8 @@
 {
   "name": "servidor",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "API do Sistema de Acompanhamento de Demandas (Node.js, TypeScript e Express)",
+  "main": "dist/server.js",
  "scripts": {
   "dev": "tsx watch src/server.ts",
   "build": "tsc",
