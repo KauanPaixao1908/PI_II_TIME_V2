@@ -1,34 +1,22 @@
 // Autor: Bruno Mareto
 //
-// Ponto de entrada do backend do Sistema de Acompanhamento de Demandas.
-// Nesta etapa (Reunião 3), o objetivo é apenas comprovar que o servidor
-// inicializa corretamente e responde a uma requisição simples. Rotas de
-// negócio (demandas, projetos, usuários) e a conexão com o banco de
-// dados serão implementadas em etapas futuras.
+// Ponto de entrada do backend (API) do Sistema de Acompanhamento de Demandas.
+// Cria a aplicação Express, registra as rotas de cada tela e inicia o servidor.
+// Na Reunião 4 os dados ficam em memória (src/data); a conexão com o banco de
+// dados será feita em etapa posterior.
 
 import express, { Request, Response } from 'express';
+import listagemRouter from './routes/listagem';
 
-// "app" é a aplicação Express em si: é nela que registramos rotas
-// (quais URLs o servidor entende) e que, no fim, colocamos para
-// escutar uma porta específica do computador.
 const app = express();
 
-// A porta é lida de uma variável de ambiente (process.env.PORT), e só
-// se ela não existir usamos 3000 como valor padrão. Isso é uma prática
-// comum porque, quando o projeto for hospedado num serviço na nuvem,
-// normalmente é esse serviço quem decide (via variável de ambiente)
-// em qual porta a aplicação deve rodar.
+// Porta definida pela variável de ambiente PORT ou, na ausência dela, 3000.
 const PORTA = process.env.PORT || 3000;
 
-// Middleware que permite ao Express interpretar automaticamente um
-// corpo de requisição no formato JSON (necessário assim que as rotas
-// de cadastro/edição de demanda começarem a receber dados do frontend).
+// Permite receber o corpo das requisições em JSON (usado nas rotas POST).
 app.use(express.json());
 
-// Rota de verificação de saúde do servidor ("health check").
-// Ao acessar http://localhost:3000/ no navegador (ou com uma
-// ferramenta como o curl), esta função é executada e devolve uma
-// resposta simples, confirmando que o servidor está de pé.
+// Rota de verificação: confirma que o servidor está em execução.
 app.get('/', (req: Request, res: Response) => {
     res.json({
         status: 'ok',
@@ -36,9 +24,10 @@ app.get('/', (req: Request, res: Response) => {
     });
 });
 
-// app.listen liga o servidor de fato: a partir deste ponto, o processo
-// Node.js fica "vivo", escutando a porta indicada, até ser encerrado
-// manualmente (Ctrl+C no terminal).
+// Rotas da API, uma por tela do sistema.
+app.use(listagemRouter); // GET /demandas (Bruno Mareto)
+
+// Inicia o servidor na porta definida acima.
 app.listen(PORTA, () => {
     console.log(`Servidor rodando em http://localhost:${PORTA}`);
 });
