@@ -4,8 +4,12 @@
 // - Monta a tabela a partir dos dados de listagem-dados.js (Documento de
 //   Visão, 2.2.9: título, tipo, prioridade, status, projeto, responsável,
 //   data de criação e prazo de finalização).
+// - Aplica filtros por status, prioridade, tipo, responsável e projeto,
+//   busca textual por título ou descrição e ordenação por criação,
+//   prioridade, prazo ou status (Documento de Visão, 2.3).
 // - Valida o formulário de filtros e busca (Reunião 3).
-// Nesta etapa a tela ainda não está integrada à API (Reunião 4).
+// Nesta etapa a tela ainda não está integrada à API (Reunião 4); as regras de
+// filtro e ordenação são as mesmas da rota GET /demandas do back-end.
 
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -21,6 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const campoTipo = document.getElementById('tipo');
     const campoResponsavel = document.getElementById('responsavel');
     const campoProjeto = document.getElementById('projeto');
+    const campoOrdenacao = document.getElementById('ordenacao');
 
     const corpoTabela = document.getElementById('corpo-tabela');
     const contador = document.getElementById('contador-resultados');
@@ -29,6 +34,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Regras de tamanho da busca textual.
     const TAMANHO_MINIMO_BUSCA = 2;
     const TAMANHO_MAXIMO_BUSCA = 60;
+
+    // Ordenação inicial e após "Limpar filtros": mais recentes primeiro.
+    const ORDENACAO_PADRAO = 'criacao-desc';
 
     // Classe CSS da etiqueta de cada prioridade (2.2.2) e de cada status (2.2.3).
     const CLASSE_PRIORIDADE = {
@@ -45,6 +53,26 @@ document.addEventListener('DOMContentLoaded', function () {
         'Concluída': 'concluida',
         'Cancelada': 'cancelada',
     };
+
+    // Posição de cada valor na ordenação: prioridade da mais urgente para a
+    // menos urgente (2.2.2) e status na ordem do ciclo de vida (2.2.4).
+    const ORDEM_PRIORIDADE = {
+        'Crítica': 0,
+        'Alta': 1,
+        'Média': 2,
+        'Baixa': 3,
+    };
+
+    const ORDEM_STATUS = {
+        'Aberta': 0,
+        'Em andamento': 1,
+        'Em revisão': 2,
+        'Concluída': 3,
+        'Cancelada': 4,
+    };
+
+    // Demandas que a tela pode mostrar. Por enquanto, todas.
+    const listaBase = demandas;
 
 
     // ---------- 2. CONVERSÃO DOS DADOS PARA A TELA ----------
@@ -101,7 +129,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Apaga as linhas atuais e cria uma linha para cada demanda da lista.
-    // Recebe a lista como parâmetro para poder mostrar o resultado dos filtros.
     function renderizarTabela(lista) {
         corpoTabela.innerHTML = '';
 
@@ -139,7 +166,102 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // ---------- 4. VALIDAÇÃO DA BUSCA (Reunião 3) ----------
+    // ---------- 4. FILTROS, BUSCA E ORDENAÇÃO (2.3) ----------
+
+    // Remove acentos e diferença entre maiúsculas e minúsculas,
+    // para "relatorio" encontrar "Relatório".
+    function normalizar(texto) {
+        return texto
+            .normalize('NFD')                   // separa a letra do acento: "ó" vira "o" + "´"
+            .replace(/[\u0300-\u036f]/g, '')    // apaga os acentos separados
+            .toLowerCase();
+    }
+
+    // Lê os valores atuais do formulário. Campo vazio = sem filtro.
+    function lerFiltros() {
+        return {
+            busca: campoBusca.value.trim(),
+            status: campoStatus.value,
+            prioridade: campoPrioridade.value,
+            tipo: campoTipo.value,
+            responsavelId: campoResponsavel.value,
+            projetoId: campoProjeto.value,
+        };
+    }
+
+    // Mantém só as demandas que passam em todos os filtros preenchidos.
+    function filtrarDemandas(lista, filtros) {
+        const termo = normalizar(filtros.busca);
+
+        return lista.filter(function (demanda) {
+            if (filtros.status !== '' && demanda.status !== filtros.status) {
+                return false;
+            }
+            if (filtros.prioridade !== '' && demanda.prioridade !== filtros.prioridade) {
+                return false;
+            }
+            if (filtros.tipo !== '' && demanda.tipo !== filtros.tipo) {
+                return false;
+            }
+            // O value do <select> é texto ("4"); o id nos dados é número (4).
+            if (filtros.responsavelId !== '' && demanda.responsavelId !== Number(filtros.responsavelId)) {
+                return false;
+            }
+            if (filtros.projetoId !== '' && demanda.projetoId !== Number(filtros.projetoId)) {
+                return false;
+            }
+            // Busca textual no título ou na descrição.
+            if (termo !== '') {
+                const textoDaDemanda = normalizar(demanda.titulo + ' ' + demanda.descricao);
+                if (!textoDaDemanda.includes(termo)) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }
+
+    // Ordena uma cópia da lista. A opção vem do <select>, por exemplo "prazo-asc".
+    // Demandas sem prazo ficam sempre no fim, nas duas direções.
+    function ordenarDemandas(lista, opcao) {
+        const partes = opcao.split('-');       // "prazo-asc" -> ["prazo", "asc"]
+        const campo = partes[0];
+        const fator = partes[1] === 'desc' ? -1 : 1;
+
+        const copia = lista.slice();           // sort altera o array; a lista original fica intacta
+
+        copia.sort(function (a, b) {
+            if (campo === 'prazo') {
+                if (a.prazo === null && b.prazo === null) return 0;
+                if (a.prazo === null) return 1;      // a vai para o fim
+                if (b.prazo === null) return -1;     // b vai para o fim
+                return fator * a.prazo.localeCompare(b.prazo);
+            }
+            if (campo === 'criacao') {
+                return fator * a.criadaEm.localeCompare(b.criadaEm);
+            }
+            if (campo === 'prioridade') {
+                return fator * (ORDEM_PRIORIDADE[a.prioridade] - ORDEM_PRIORIDADE[b.prioridade]);
+            }
+            if (campo === 'status') {
+                return fator * (ORDEM_STATUS[a.status] - ORDEM_STATUS[b.status]);
+            }
+            return 0;
+        });
+
+        return copia;
+    }
+
+    // Filtra, ordena e redesenha a tabela. Devolve quantas demandas sobraram.
+    function aplicarFiltros() {
+        const filtradas = filtrarDemandas(listaBase, lerFiltros());
+        const ordenadas = ordenarDemandas(filtradas, campoOrdenacao.value);
+        renderizarTabela(ordenadas);
+        return ordenadas.length;
+    }
+
+
+    // ---------- 5. VALIDAÇÃO DA BUSCA (Reunião 3) ----------
 
     // Destaca o campo (CSS: [aria-invalid="true"]) e escreve a mensagem de erro.
     function mostrarErro(campo, elementoErro, mensagem) {
@@ -186,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // ---------- 5. EVENTOS ----------
+    // ---------- 6. EVENTOS ----------
 
     // Revalida a busca a cada tecla, para o erro sumir assim que for corrigido.
     campoBusca.addEventListener('input', validarBusca);
@@ -200,19 +322,27 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // Os filtros passam a ser aplicados à tabela na próxima etapa.
-        definirStatusFormulario('Filtros válidos.', 'sucesso');
+        const total = aplicarFiltros();
+
+        if (total === 0) {
+            definirStatusFormulario('Nenhuma demanda corresponde aos filtros escolhidos.', 'erro');
+        } else {
+            definirStatusFormulario('Filtros aplicados: ' + total + ' demanda(s) encontrada(s).', 'sucesso');
+        }
     });
 
-    // O type="reset" limpa os campos; aqui são limpas as mensagens.
+    // O evento "reset" acontece ANTES de o navegador limpar os campos.
+    // Por isso a tabela é montada direto com a lista completa e a ordenação
+    // padrão, em vez de ler os campos (que ainda teriam os valores antigos).
     formulario.addEventListener('reset', function () {
         limparErro(campoBusca, erroBusca);
         statusFormulario.hidden = true;
         statusFormulario.textContent = '';
+        renderizarTabela(ordenarDemandas(listaBase, ORDENACAO_PADRAO));
     });
 
 
-    // ---------- 6. INÍCIO ----------
+    // ---------- 7. INÍCIO ----------
 
-    renderizarTabela(demandas);
+    aplicarFiltros();
 });
