@@ -1,72 +1,175 @@
 // Autor: Bruno Mareto
 //
-// Validações em JavaScript do formulário de filtros e busca da tela de
-// Listagem de Demandas. Nesta etapa do projeto ainda não existe backend
-// integrado a esta tela, então este script não busca dados de verdade:
-// ele garante que o formulário não seja considerado "válido" enquanto o
-// campo de busca não estiver em um formato aceitável.
+// Tela de Listagem de Demandas.
+// - Monta a tabela a partir dos dados de listagem-dados.js (Documento de
+//   Visão, 2.2.9: título, tipo, prioridade, status, projeto, responsável,
+//   data de criação e prazo de finalização).
+// - Valida o formulário de filtros e busca (Reunião 3).
+// Nesta etapa a tela ainda não está integrada à API (Reunião 4).
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    // 1. Referências para os elementos do DOM usados nas validações.
-    var formulario = document.getElementById('form-filtros');
-    var campoBusca = document.getElementById('busca');
-    var erroBusca = document.getElementById('erro-busca');
-    var statusFormulario = document.getElementById('status-formulario');
+    // ---------- 1. ELEMENTOS DA PÁGINA ----------
 
-    var campoStatus = document.getElementById('status');
-    var campoPrioridade = document.getElementById('prioridade');
-    var campoTipo = document.getElementById('tipo');
-    var campoResponsavel = document.getElementById('responsavel');
-    var campoProjeto = document.getElementById('projeto');
+    const formulario = document.getElementById('form-filtros');
+    const campoBusca = document.getElementById('busca');
+    const erroBusca = document.getElementById('erro-busca');
+    const statusFormulario = document.getElementById('status-formulario');
 
-    // Regras de tamanho da busca textual, isoladas em constantes para
-    // não espalhar números soltos pelo meio do código.
-    var TAMANHO_MINIMO_BUSCA = 2;
-    var TAMANHO_MAXIMO_BUSCA = 60;
+    const campoStatus = document.getElementById('status');
+    const campoPrioridade = document.getElementById('prioridade');
+    const campoTipo = document.getElementById('tipo');
+    const campoResponsavel = document.getElementById('responsavel');
+    const campoProjeto = document.getElementById('projeto');
 
-    // 2. Marca um campo como inválido: destaca a borda (via CSS, com o
-    //    seletor [aria-invalid="true"]) e escreve a mensagem de erro no
-    //    elemento correspondente.
+    const corpoTabela = document.getElementById('corpo-tabela');
+    const contador = document.getElementById('contador-resultados');
+    const semResultados = document.getElementById('sem-resultados');
+
+    // Regras de tamanho da busca textual.
+    const TAMANHO_MINIMO_BUSCA = 2;
+    const TAMANHO_MAXIMO_BUSCA = 60;
+
+    // Classe CSS da etiqueta de cada prioridade (2.2.2) e de cada status (2.2.3).
+    const CLASSE_PRIORIDADE = {
+        'Crítica': 'critica',
+        'Alta': 'alta',
+        'Média': 'media',
+        'Baixa': 'baixa',
+    };
+
+    const CLASSE_STATUS = {
+        'Aberta': 'aberta',
+        'Em andamento': 'andamento',
+        'Em revisão': 'revisao',
+        'Concluída': 'concluida',
+        'Cancelada': 'cancelada',
+    };
+
+
+    // ---------- 2. CONVERSÃO DOS DADOS PARA A TELA ----------
+
+    // Os dados guardam só o id do projeto; a tabela mostra o nome.
+    function nomeDoProjeto(projetoId) {
+        const projeto = projetos.find(function (p) { return p.id === projetoId; });
+        return projeto ? projeto.nome : 'Projeto não encontrado';
+    }
+
+    // O responsável é opcional (2.2.5): responsavelId pode ser null.
+    function nomeDoResponsavel(responsavelId) {
+        if (responsavelId === null) {
+            return 'Sem responsável';
+        }
+        const usuario = usuarios.find(function (u) { return u.id === responsavelId; });
+        return usuario ? usuario.nome : 'Usuário não encontrado';
+    }
+
+    // Converte "2026-10-09" ou "2026-10-09T08:30:00" para "09/10/2026".
+    // O prazo é opcional (2.2.5): null vira "Sem prazo".
+    function formatarData(textoIso) {
+        if (textoIso === null) {
+            return 'Sem prazo';
+        }
+        const partes = textoIso.slice(0, 10).split('-');   // ["2026", "10", "09"]
+        return partes[2] + '/' + partes[1] + '/' + partes[0];
+    }
+
+
+    // ---------- 3. MONTAGEM DA TABELA ----------
+
+    // Cria uma célula com texto simples e, opcionalmente, uma classe.
+    function criarCelula(texto, classe) {
+        const celula = document.createElement('td');
+        celula.textContent = texto;
+        if (classe) {
+            celula.classList.add(classe);
+        }
+        return celula;
+    }
+
+    // Cria uma célula com a etiqueta colorida de prioridade ou de status.
+    function criarEtiqueta(texto, classe) {
+        const celula = document.createElement('td');
+        const etiqueta = document.createElement('span');
+        etiqueta.textContent = texto;
+        etiqueta.classList.add('etiqueta');
+        if (classe) {
+            etiqueta.classList.add(classe);
+        }
+        celula.append(etiqueta);
+        return celula;
+    }
+
+    // Apaga as linhas atuais e cria uma linha para cada demanda da lista.
+    // Recebe a lista como parâmetro para poder mostrar o resultado dos filtros.
+    function renderizarTabela(lista) {
+        corpoTabela.innerHTML = '';
+
+        for (const demanda of lista) {
+            const linha = document.createElement('tr');
+
+            linha.append(
+                criarCelula(demanda.titulo, 'titulo-demanda'),
+                criarCelula(demanda.tipo),
+                criarEtiqueta(demanda.prioridade, CLASSE_PRIORIDADE[demanda.prioridade]),
+                criarEtiqueta(demanda.status, CLASSE_STATUS[demanda.status]),
+                criarCelula(nomeDoProjeto(demanda.projetoId)),
+                criarCelula(nomeDoResponsavel(demanda.responsavelId)),
+                criarCelula(formatarData(demanda.criadaEm), 'data'),
+                criarCelula(formatarData(demanda.prazo), 'data')
+            );
+
+            // Leva para a tela de Detalhes da Demanda, informando o id na URL.
+            const celulaAcoes = document.createElement('td');
+            const link = document.createElement('a');
+            link.textContent = 'Ver detalhes';
+            link.classList.add('botao-detalhes');
+            link.href = 'Detalhes_Demanda/detalhes-demanda.html?id=' + demanda.id;
+            link.setAttribute('aria-label', 'Ver detalhes: ' + demanda.titulo);
+            celulaAcoes.append(link);
+            linha.append(celulaAcoes);
+
+            corpoTabela.append(linha);
+        }
+
+        // Contador e mensagem de lista vazia.
+        const total = lista.length;
+        contador.textContent = total === 1 ? '1 demanda' : total + ' demandas';
+        semResultados.hidden = total > 0;
+    }
+
+
+    // ---------- 4. VALIDAÇÃO DA BUSCA (Reunião 3) ----------
+
+    // Destaca o campo (CSS: [aria-invalid="true"]) e escreve a mensagem de erro.
     function mostrarErro(campo, elementoErro, mensagem) {
         campo.setAttribute('aria-invalid', 'true');
         elementoErro.textContent = mensagem;
     }
 
-    // Desfaz a marcação de erro de um campo.
     function limparErro(campo, elementoErro) {
         campo.removeAttribute('aria-invalid');
         elementoErro.textContent = '';
     }
 
-    // 3. Valida somente o campo de busca textual.
-    //    Retorna true se o valor pode ser usado, false caso contrário.
+    // A busca é opcional; o tamanho só é conferido quando há texto digitado.
     function validarBusca() {
-        var valor = campoBusca.value.trim();
+        const valor = campoBusca.value.trim();
 
-        // A busca é opcional: não preencher nada é um estado válido,
-        // significa "não filtrar por texto". A validação de tamanho só
-        // entra em ação quando a pessoa já digitou alguma coisa.
         if (valor.length === 0) {
             limparErro(campoBusca, erroBusca);
             return true;
         }
 
         if (valor.length < TAMANHO_MINIMO_BUSCA) {
-            mostrarErro(
-                campoBusca,
-                erroBusca,
-                'Digite pelo menos ' + TAMANHO_MINIMO_BUSCA + ' caracteres para buscar.'
-            );
+            mostrarErro(campoBusca, erroBusca,
+                'Digite pelo menos ' + TAMANHO_MINIMO_BUSCA + ' caracteres para buscar.');
             return false;
         }
 
         if (valor.length > TAMANHO_MAXIMO_BUSCA) {
-            mostrarErro(
-                campoBusca,
-                erroBusca,
-                'A busca pode ter no máximo ' + TAMANHO_MAXIMO_BUSCA + ' caracteres.'
-            );
+            mostrarErro(campoBusca, erroBusca,
+                'A busca pode ter no máximo ' + TAMANHO_MAXIMO_BUSCA + ' caracteres.');
             return false;
         }
 
@@ -74,8 +177,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return true;
     }
 
-    // 4. Mostra a mensagem geral de status acima/abaixo dos botões,
-    //    trocando a cor de fundo conforme o tipo ('erro' ou 'sucesso').
+    // Mensagem geral do formulário, com cor de erro ou de sucesso.
     function definirStatusFormulario(mensagem, tipo) {
         statusFormulario.textContent = mensagem;
         statusFormulario.hidden = false;
@@ -83,53 +185,34 @@ document.addEventListener('DOMContentLoaded', function () {
         statusFormulario.classList.add(tipo === 'erro' ? 'status-erro' : 'status-sucesso');
     }
 
-    // 5. Validação em tempo real: revalida a busca a cada tecla digitada,
-    //    para a mensagem de erro sumir assim que o problema for corrigido.
+
+    // ---------- 5. EVENTOS ----------
+
+    // Revalida a busca a cada tecla, para o erro sumir assim que for corrigido.
     campoBusca.addEventListener('input', validarBusca);
 
-    // 6. Intercepta o envio do formulário.
     formulario.addEventListener('submit', function (evento) {
-        // Sem isso, o navegador tentaria recarregar a página (o <form>
-        // não tem "action" definido) e a validação nunca chegaria a
-        // aparecer na tela.
         evento.preventDefault();
 
-        var buscaValida = validarBusca();
-
-        if (!buscaValida) {
+        if (!validarBusca()) {
             campoBusca.focus();
-            definirStatusFormulario(
-                'Corrija os campos destacados antes de aplicar os filtros.',
-                'erro'
-            );
+            definirStatusFormulario('Corrija os campos destacados antes de aplicar os filtros.', 'erro');
             return;
         }
 
-        // Dados válidos. Como o backend desta tela ainda não existe
-        // nesta etapa, não há requisição real — só demonstramos que a
-        // validação passou, resumindo os filtros que seriam enviados.
-        var filtrosEscolhidos = [
-            'status: ' + (campoStatus.value || 'todos'),
-            'prioridade: ' + (campoPrioridade.value || 'todas'),
-            'tipo: ' + (campoTipo.value || 'todos'),
-            'responsável: ' + (campoResponsavel.value || 'todos'),
-            'projeto: ' + (campoProjeto.value || 'todos')
-        ];
-
-        definirStatusFormulario(
-            'Filtros válidos. Quando o backend estiver integrado, esta ação buscará por: ' +
-                filtrosEscolhidos.join(', ') + '.',
-            'sucesso'
-        );
+        // Os filtros passam a ser aplicados à tabela na próxima etapa.
+        definirStatusFormulario('Filtros válidos.', 'sucesso');
     });
 
-    // 7. O botão "Limpar filtros" (type="reset") já limpa os valores dos
-    //    campos sozinho — é o comportamento padrão do navegador. Porém
-    //    ele não sabe das mensagens de erro/status que criamos, então
-    //    elas precisam ser limpas manualmente aqui.
+    // O type="reset" limpa os campos; aqui são limpas as mensagens.
     formulario.addEventListener('reset', function () {
         limparErro(campoBusca, erroBusca);
         statusFormulario.hidden = true;
         statusFormulario.textContent = '';
     });
+
+
+    // ---------- 6. INÍCIO ----------
+
+    renderizarTabela(demandas);
 });

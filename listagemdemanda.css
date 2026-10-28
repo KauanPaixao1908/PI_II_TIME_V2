@@ -226,6 +226,28 @@ tbody tr:hover {
     color: #084298;
 }
 
+/* Etiquetas que faltavam para cobrir todas as prioridades (2.2.2) e todos os status (2.2.3) */
+.critica {
+    background-color: #842029;
+    color: white;
+}
+
+.aberta {
+    background-color: #e2e3e5;
+    color: #41464b;
+}
+
+.revisao {
+    background-color: #e0cffc;
+    color: #432874;
+}
+
+.cancelada {
+    background-color: #e9ecef;
+    color: #6c757d;
+    text-decoration: line-through;
+}
+
 .botao-detalhes {
     display: inline-block;
     padding: 8px 12px;
