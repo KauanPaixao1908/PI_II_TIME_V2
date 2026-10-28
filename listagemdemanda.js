@@ -7,6 +7,9 @@
 // - Aplica filtros por status, prioridade, tipo, responsável e projeto,
 //   busca textual por título ou descrição e ordenação por criação,
 //   prioridade, prazo ou status (Documento de Visão, 2.3).
+// - Respeita o perfil do usuário logado (Documento de Visão, 2.1): o
+//   Administrador vê todas as demandas; Líder de Projeto e Membro da Equipe
+//   veem só as dos projetos vinculados; o Membro não cria demandas.
 // - Valida o formulário de filtros e busca (Reunião 3).
 // Nesta etapa a tela ainda não está integrada à API (Reunião 4); as regras de
 // filtro e ordenação são as mesmas da rota GET /demandas do back-end.
@@ -30,6 +33,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const corpoTabela = document.getElementById('corpo-tabela');
     const contador = document.getElementById('contador-resultados');
     const semResultados = document.getElementById('sem-resultados');
+
+    const textoUsuario = document.getElementById('usuario-logado');
+    const botaoNovaDemanda = document.getElementById('botao-nova-demanda');
+    const linkSair = document.getElementById('link-sair');
 
     // Regras de tamanho da busca textual.
     const TAMANHO_MINIMO_BUSCA = 2;
@@ -71,11 +78,70 @@ document.addEventListener('DOMContentLoaded', function () {
         'Cancelada': 4,
     };
 
-    // Demandas que a tela pode mostrar. Por enquanto, todas.
-    const listaBase = demandas;
+
+    // ---------- 2. PERFIL DO USUÁRIO (Documento de Visão, 2.1) ----------
+
+    // Chave combinada com a tela de login: o login grava o usuário que entrou
+    // (id, nome, perfil e projetoIds, sem senha) e as outras telas leem.
+    const CHAVE_USUARIO = 'usuarioLogado';
+
+    // Lê o usuário guardado no navegador. Devolve null se não houver ninguém
+    // logado ou se o valor guardado não for um JSON válido.
+    function lerUsuarioLogado() {
+        try {
+            const texto = localStorage.getItem(CHAVE_USUARIO);
+            return texto ? JSON.parse(texto) : null;
+        } catch (erro) {
+            return null;
+        }
+    }
+
+    // Administrador vê todos os projetos (2.1.1); Líder (2.1.2) e Membro (2.1.3)
+    // veem só as demandas dos projetos aos quais estão vinculados.
+    function demandasVisiveis(usuario) {
+        if (usuario === null) {
+            return [];
+        }
+        if (usuario.perfil === 'Administrador') {
+            return demandas;
+        }
+        return demandas.filter(function (demanda) {
+            return usuario.projetoIds.includes(demanda.projetoId);
+        });
+    }
+
+    // Ajusta o cabeçalho, o botão de cadastro e o filtro de projeto ao perfil.
+    function aplicarPerfilNaTela(usuario) {
+        if (usuario === null) {
+            textoUsuario.textContent = 'Nenhum usuário logado';
+            botaoNovaDemanda.hidden = true;
+            semResultados.textContent = 'Entre pelo login para ver as demandas.';
+            return;
+        }
+
+        textoUsuario.textContent = usuario.nome + ' · ' + usuario.perfil;
+
+        // O Membro da Equipe não cria demandas (2.1.3).
+        botaoNovaDemanda.hidden = usuario.perfil === 'Membro da Equipe';
+
+        // Fora o Administrador, o filtro de projeto mostra só os projetos vinculados.
+        if (usuario.perfil !== 'Administrador') {
+            const opcoes = Array.from(campoProjeto.options);
+            for (const opcao of opcoes) {
+                if (opcao.value !== '' && !usuario.projetoIds.includes(Number(opcao.value))) {
+                    opcao.remove();
+                }
+            }
+        }
+    }
+
+    const usuarioLogado = lerUsuarioLogado();
+
+    // Demandas que a tela pode mostrar, conforme o perfil.
+    const listaBase = demandasVisiveis(usuarioLogado);
 
 
-    // ---------- 2. CONVERSÃO DOS DADOS PARA A TELA ----------
+    // ---------- 3. CONVERSÃO DOS DADOS PARA A TELA ----------
 
     // Os dados guardam só o id do projeto; a tabela mostra o nome.
     function nomeDoProjeto(projetoId) {
@@ -103,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // ---------- 3. MONTAGEM DA TABELA ----------
+    // ---------- 4. MONTAGEM DA TABELA ----------
 
     // Cria uma célula com texto simples e, opcionalmente, uma classe.
     function criarCelula(texto, classe) {
@@ -166,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // ---------- 4. FILTROS, BUSCA E ORDENAÇÃO (2.3) ----------
+    // ---------- 5. FILTROS, BUSCA E ORDENAÇÃO (2.3) ----------
 
     // Remove acentos e diferença entre maiúsculas e minúsculas,
     // para "relatorio" encontrar "Relatório".
@@ -261,7 +327,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // ---------- 5. VALIDAÇÃO DA BUSCA (Reunião 3) ----------
+    // ---------- 6. VALIDAÇÃO DA BUSCA (Reunião 3) ----------
 
     // Destaca o campo (CSS: [aria-invalid="true"]) e escreve a mensagem de erro.
     function mostrarErro(campo, elementoErro, mensagem) {
@@ -308,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // ---------- 6. EVENTOS ----------
+    // ---------- 7. EVENTOS ----------
 
     // Revalida a busca a cada tecla, para o erro sumir assim que for corrigido.
     campoBusca.addEventListener('input', validarBusca);
@@ -332,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // O evento "reset" acontece ANTES de o navegador limpar os campos.
-    // Por isso a tabela é montada direto com a lista completa e a ordenação
+    // Por isso a tabela é montada direto com a lista do perfil e a ordenação
     // padrão, em vez de ler os campos (que ainda teriam os valores antigos).
     formulario.addEventListener('reset', function () {
         limparErro(campoBusca, erroBusca);
@@ -341,8 +407,14 @@ document.addEventListener('DOMContentLoaded', function () {
         renderizarTabela(ordenarDemandas(listaBase, ORDENACAO_PADRAO));
     });
 
+    // Sair: apaga o usuário guardado antes de ir para a tela de login.
+    linkSair.addEventListener('click', function () {
+        localStorage.removeItem(CHAVE_USUARIO);
+    });
 
-    // ---------- 7. INÍCIO ----------
 
+    // ---------- 8. INÍCIO ----------
+
+    aplicarPerfilNaTela(usuarioLogado);
     aplicarFiltros();
 });

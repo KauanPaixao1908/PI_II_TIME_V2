@@ -1,4 +1,7 @@
-/* Autor: Bruno Mareto */
+/* Autor: Bruno Mareto
+   Estilos da tela de Listagem de Demandas: barra superior, filtros e busca,
+   tabela com etiquetas de prioridade (2.2.2) e de status (2.2.3), rodapé e
+   ajustes para telas menores. */
 
 * {
     box-sizing: border-box;
@@ -55,6 +58,14 @@ body {
 #navegacao-principal a:hover,
 #navegacao-principal a.link-ativo {
     color: white;
+}
+
+
+/* Nome e perfil de quem está logado, mostrado entre os links da barra superior */
+#usuario-logado {
+    color: #ced4da;
+    font-size: 0.95rem;
+    font-style: italic;
 }
 
 #area-demandas {
