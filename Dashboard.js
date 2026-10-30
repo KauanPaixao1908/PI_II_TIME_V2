@@ -1,4 +1,4 @@
-// Dashboard.js - Conversão de Dashboard.java para JavaScript (ES6)
+// Autor: Miguel Bueno //
 
 class Indicador {
     constructor(tipo, valor, percentual, descricao) {
