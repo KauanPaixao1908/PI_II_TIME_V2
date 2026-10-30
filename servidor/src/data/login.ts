@@ -1,4 +1,4 @@
-// Autor: <PREENCHER NOME DO AUTOR>
+// Autor: <Kauan Paixão>
 // Arquivo: login.ts
 // Função: rota de login. Confere e-mail e senha no MySQL e devolve o token e o perfil.
 
