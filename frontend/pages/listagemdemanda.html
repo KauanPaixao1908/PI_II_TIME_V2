@@ -11,7 +11,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Listagem de Demandas - Projeto Integrador</title>
-    <link rel="stylesheet" href="listagemdemanda.css">
+    <link rel="stylesheet" href="../css/listagemdemanda.css">
 </head>
 <body>
     <header id="barra-superior">
@@ -22,7 +22,7 @@
                 <a href="listagemdemanda.html" class="link-ativo">Demandas</a>
                 <!-- Nome e perfil do usuário logado, preenchidos pelo JS -->
                 <span id="usuario-logado"></span>
-                <a href="Tela_Login/Tela_Login.html" id="link-sair">Sair</a>
+                <a href="../index.html" id="link-sair">Sair</a>
             </nav>
         </div>
     </header>
@@ -34,7 +34,7 @@
                 <p id="descricao-pagina">Encontre demandas por título, descrição ou critérios específicos.</p>
             </div>
             <!-- Escondido pelo JS para o perfil Membro da Equipe (seção 2.1.3) -->
-            <a href="Cadastro_Demanda/cadastro-demanda.html" id="botao-nova-demanda">+ Nova demanda</a>
+            <a href="cadastro-demanda.html" id="botao-nova-demanda">+ Nova demanda</a>
         </div>
 
         <section id="box-filtros" aria-labelledby="titulo-filtros">
@@ -162,7 +162,7 @@
     </footer>
 
     <!-- Os dados vêm primeiro: o listagemdemanda.js usa as listas definidas nele -->
-    <script src="listagem-dados.js"></script>
-    <script src="listagemdemanda.js"></script>
+    <script src="../js/listagem-dados.js"></script>
+    <script src="../js/listagemdemanda.js"></script>
 </body>
 </html>

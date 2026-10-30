@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const link = document.createElement('a');
             link.textContent = 'Ver detalhes';
             link.classList.add('botao-detalhes');
-            link.href = 'Detalhes_Demanda/detalhes-demanda.html?id=' + demanda.id;
+            link.href = 'detalhes-demanda.html?id=' + demanda.id;
             link.setAttribute('aria-label', 'Ver detalhes: ' + demanda.titulo);
             celulaAcoes.append(link);
             linha.append(celulaAcoes);
