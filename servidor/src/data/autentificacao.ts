@@ -1,4 +1,4 @@
-// Autor: <PREENCHER NOME DO AUTOR>
+// Autor: <Kauan Paixão>
 // Arquivo: autentificacao.ts
 // Função: gerar o token do login e proteger as rotas (só logado / só Administrador)
 
