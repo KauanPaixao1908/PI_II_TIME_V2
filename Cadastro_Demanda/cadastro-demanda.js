@@ -1,3 +1,4 @@
+// Autor: Leonardo Miziara //
 document.addEventListener('DOMContentLoaded', function() {
     inicializarFormulario();
     configurarDataAtual();
