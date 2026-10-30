@@ -85,7 +85,7 @@ window.addEventListener("DOMContentLoaded", function () {
         aviso.textContent = "Login realizado com sucesso! Redirecionando...";
         aviso.style.color = "#146c43";
         
-        window.location.href = "../dashboard.html";
+        window.location.href = "pages/dashboard.html";
         
         return true;
 
