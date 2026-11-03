@@ -1,7 +1,7 @@
 -- =====================================================================
 -- Sistema de Acompanhamento de Demandas - Projeto Integrador 2
 -- Versão SIMPLES (sem triggers e sem views)
--- Autor: <PREENCHER NOME DO AUTOR DO ARQUIVO>
+-- Autor: <Kauan Paixão>
 -- =====================================================================
 -- As regras (ciclo de vida do status, permissões por perfil, histórico,
 -- feriado) ficam no BACKEND (Node/TypeScript). O banco só guarda os dados.
@@ -119,60 +119,4 @@ INSERT INTO comentario (demanda_id, usuario_id, texto) VALUES
 INSERT INTO historico (demanda_id, usuario_id, descricao) VALUES
   (1, 2, 'Lucas criou a demanda.');
 
--- =====================================================================
--- COMANDOS QUE O BACKEND VAI USAR (? = valor que vem do código)
--- =====================================================================
 
--- LOGIN
--- SELECT * FROM usuario WHERE email = ?;
-
--- CADASTRAR DEMANDA (status já nasce 'Aberta' pelo DEFAULT)
--- INSERT INTO demanda (titulo, descricao, tipo, prioridade, projeto_id, responsavel_id, prazo_finalizacao)
--- VALUES (?, ?, ?, ?, ?, ?, ?);
-
--- LISTAR DEMANDAS (com nome do projeto e do responsável)
--- SELECT d.id, d.titulo, d.tipo, d.prioridade, d.status,
---        p.nome AS projeto, u.nome AS responsavel,
---        d.data_criacao, d.prazo_finalizacao
--- FROM demanda d
--- JOIN projeto p ON p.id = d.projeto_id
--- LEFT JOIN usuario u ON u.id = d.responsavel_id;
-
--- FILTRAR POR STATUS E PRIORIDADE + BUSCA POR TEXTO + ORDENAR
--- SELECT * FROM demanda
--- WHERE status = ? AND prioridade = ?
---   AND (titulo LIKE ? OR descricao LIKE ?)
--- ORDER BY data_criacao DESC;
-
--- DETALHES DE UMA DEMANDA
--- SELECT * FROM demanda WHERE id = ?;
-
--- EDITAR DEMANDA
--- UPDATE demanda SET titulo = ?, descricao = ?, tipo = ?, prioridade = ?,
---        responsavel_id = ?, prazo_finalizacao = ? WHERE id = ?;
-
--- ATUALIZAR STATUS (o backend confere antes se a transição é permitida)
--- UPDATE demanda SET status = ? WHERE id = ?;
-
--- CANCELAR DEMANDA (nunca DELETE!)
--- UPDATE demanda SET status = 'Cancelada' WHERE id = ?;
-
--- COMENTÁRIOS DE UMA DEMANDA
--- SELECT c.texto, c.data_hora, u.nome
--- FROM comentario c JOIN usuario u ON u.id = c.usuario_id
--- WHERE c.demanda_id = ? ORDER BY c.data_hora;
--- INSERT INTO comentario (demanda_id, usuario_id, texto) VALUES (?, ?, ?);
-
--- HISTÓRICO DE UMA DEMANDA
--- SELECT descricao, data_hora FROM historico WHERE demanda_id = ? ORDER BY data_hora;
--- INSERT INTO historico (demanda_id, usuario_id, descricao) VALUES (?, ?, ?);
-
--- DASHBOARD
--- SELECT COUNT(*) FROM demanda;                                       -- total
--- SELECT status, COUNT(*) FROM demanda GROUP BY status;               -- por status
--- SELECT prioridade, COUNT(*) FROM demanda GROUP BY prioridade;       -- por prioridade
--- SELECT tipo, COUNT(*) FROM demanda GROUP BY tipo;                   -- por tipo
--- SELECT * FROM demanda WHERE prioridade = 'Crítica' AND status = 'Aberta';  -- críticas abertas
--- SELECT * FROM demanda                                               -- próximas do prazo
--- WHERE prazo_finalizacao BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
---   AND status NOT IN ('Concluída','Cancelada');
