@@ -1,11 +1,11 @@
 // Autor: Kauan Paixão
 // Arquivo: detalhes.ts
 // Função: rotas da tela de Detalhes da Demanda:
-//   GET  /demandas/:id               -> detalhes de uma demanda
-//   GET  /demandas/:id/comentarios   -> lista os comentários da demanda
-//   POST /demandas/:id/comentarios   -> registra um comentário novo
-//   GET  /demandas/:id/historico     -> histórico de alterações da demanda
-// Os dados vêm de src/data/ e os tipos de src/tipos.ts, como combinado no grupo.
+//   GET  /demandas/:id  detalhes de uma demanda
+//   GET  /demandas/:id/comentarios lista os comentários da demanda
+//   POST /demandas/:id/comentarios registra um comentário novo
+//   GET  /demandas/:id/historico histórico de alterações da demanda
+// Os dados vêm de src/data/ (em memória, ainda sem banco) e os tipos de src/tipos.ts.
 // No server.ts esta rota é registrada assim:  app.use("/demandas", detalhesRouter);
 
 import { Router, Request, Response } from "express";
@@ -41,6 +41,13 @@ function dataHoraAgora(): string {
         doisDigitos(agora.getSeconds());
 }
 
+// Lê o :id da URL. Devolve null se não for um número inteiro positivo
+// (ex.: /demandas/abc), para a rota responder 400 em vez de 404.
+function lerId(req: Request): number | null {
+    const id = Number(req.params.id);
+    return Number.isInteger(id) && id > 0 ? id : null;
+}
+
 // Procura o nome de um usuário pelo id (vazio se não achar)
 function nomeDoUsuario(id: number | undefined | null): string {
     const usuario = usuarios.find(function (u) {
@@ -55,7 +62,12 @@ function nomeDoUsuario(id: number | undefined | null): string {
 // 200 com a demanda | 404 se não existir
 // ---------------------------------------------------------------------
 router.get("/:id", function (req: Request, res: Response) {
-    const id = Number(req.params.id);
+    const id = lerId(req);
+    if (id === null) {
+        res.status(400).json({ mensagem: "Id da demanda inválido." });
+        return;
+    }
+
     const demanda = buscarDemanda(id);
 
     if (!demanda) {
@@ -80,7 +92,11 @@ router.get("/:id", function (req: Request, res: Response) {
 // 200 com a lista | 404 se a demanda não existir
 // ---------------------------------------------------------------------
 router.get("/:id/comentarios", function (req: Request, res: Response) {
-    const id = Number(req.params.id);
+    const id = lerId(req);
+    if (id === null) {
+        res.status(400).json({ mensagem: "Id da demanda inválido." });
+        return;
+    }
 
     if (!buscarDemanda(id)) {
         res.status(404).json({ mensagem: "Demanda não encontrada." });
@@ -102,12 +118,19 @@ router.get("/:id/comentarios", function (req: Request, res: Response) {
 // ---------------------------------------------------------------------
 // POST /demandas/:id/comentarios
 // Corpo esperado: { "autorId": 3, "texto": "Meu comentário" }
-// 201 ao criar | 400 texto vazio ou autor inválido | 404 demanda não existe
+// 201 ao criar | 400 texto vazio ou autor inválido
+// 403 autor fora do projeto da demanda | 404 demanda não existe
 // ---------------------------------------------------------------------
 router.post("/:id/comentarios", function (req: Request, res: Response) {
-    const id = Number(req.params.id);
+    const id = lerId(req);
+    if (id === null) {
+        res.status(400).json({ mensagem: "Id da demanda inválido." });
+        return;
+    }
 
-    if (!buscarDemanda(id)) {
+    const demanda = buscarDemanda(id);
+
+    if (!demanda) {
         res.status(404).json({ mensagem: "Demanda não encontrada." });
         return;
     }
@@ -127,6 +150,13 @@ router.post("/:id/comentarios", function (req: Request, res: Response) {
 
     if (!autor) {
         res.status(400).json({ mensagem: "Autor do comentário inválido." });
+        return;
+    }
+
+    // Só comenta quem participa do projeto da demanda (o Administrador vê tudo).
+    // Documento de Visão 2.1.2 e 2.1.3: Líder e Membro só acessam os seus projetos.
+    if (autor.perfil !== "Administrador" && !autor.projetoIds.includes(demanda.projetoId)) {
+        res.status(403).json({ mensagem: "Você não participa do projeto desta demanda." });
         return;
     }
 
@@ -156,7 +186,11 @@ router.post("/:id/comentarios", function (req: Request, res: Response) {
 // 200 com a lista (mais antigo primeiro) | 404 se a demanda não existir
 // ---------------------------------------------------------------------
 router.get("/:id/historico", function (req: Request, res: Response) {
-    const id = Number(req.params.id);
+    const id = lerId(req);
+    if (id === null) {
+        res.status(400).json({ mensagem: "Id da demanda inválido." });
+        return;
+    }
 
     if (!buscarDemanda(id)) {
         res.status(404).json({ mensagem: "Demanda não encontrada." });
