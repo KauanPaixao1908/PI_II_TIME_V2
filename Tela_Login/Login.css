@@ -1,3 +1,4 @@
+/* Autor: Kauan Paixão */
 /* Configuração geral */
 * {
     box-sizing: border-box;
@@ -104,7 +105,9 @@ h2 {
     font-weight: 600;
 }
 
-#formulario-login {
+/* Mesmo espaçamento para o formulário de login e o de cadastro */
+#formulario-login,
+#formulario-cadastro {
     padding: 28px;
 }
 
@@ -182,3 +185,46 @@ h2 {
     justify-content: space-between;
     gap: 24px;
 }
+
+/* Texto de ajuda abaixo de um campo (ex.: regras da senha) */
+.dica-campo {
+    margin: 6px 0 0;
+    color: #626970;
+    font-size: 0.875rem;
+}
+
+/* Botão "Criar conta" (secundário, com borda azul) */
+#box-acoes {
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.botao-secundario {
+    display: inline-flex;
+    align-items: center;
+    min-height: 46px;
+    padding: 10px 30px;
+    border: 1px solid #0d6efd;
+    border-radius: 6px;
+    background-color: white;
+    color: #0d6efd;
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.botao-secundario:hover {
+    background-color: #e7f1ff;
+}
+
+.botao-secundario:focus-visible {
+    outline: 3px solid #86b7fe;
+    outline-offset: 3px;
+}
+
+/* Botão desativado enquanto espera a resposta da API */
+#botao-entrar:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+

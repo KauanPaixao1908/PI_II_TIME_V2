@@ -1,3 +1,4 @@
+<!-- Autor: Kauan Paixão -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -34,8 +35,8 @@
 
             <div id="box-formulario">
                 <div id="titulo-box"><h2 id="titulo-formulario">Acesso ao sistema</h2></div>
-                <!-- Parte visual: os dados não são enviados nem armazenados. -->
-                <form id="formulario-login" aria-labelledby="titulo-formulario">
+                <!-- Os dados são enviados para a API (/api/login), que confere no banco. -->
+                <form id="formulario-login" aria-labelledby="titulo-formulario" novalidate>
 
                     <div class="box-campo" id="box-email">
                         <label for="email">E-mail</label>
@@ -48,9 +49,11 @@
                     </div>
 
                     <div id="box-acoes">
-                        <button type="button" id="botao-entrar" aria-describedby="aviso-prototipo">Entrar</button>
+                        <button type="submit" id="botao-entrar" aria-describedby="aviso-prototipo">Entrar</button>
+                        <!-- Leva para a tela de criação de conta -->
+                        <a href="Tela_Cadastro.html" id="botao-criar-conta" class="botao-secundario">Criar conta</a>
                     </div>
-                    <p id="aviso-prototipo"></p>
+                    <p id="aviso-prototipo" role="status"></p>
                 </form>
             </div>
         </div>
