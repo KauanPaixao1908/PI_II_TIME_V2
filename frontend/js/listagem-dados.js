@@ -1,0 +1,191 @@
+// Autor: Bruno Mareto
+// Dados de teste da tela de Listagem de Demandas.
+// Cópia dos dados em memória do back-end (servidor/src/data: demandas.ts,
+// usuarios.ts e projetos.ts), para a tela funcionar enquanto a integração
+// com a API não é feita (Reunião 4: integração front/back não obrigatória).
+// Os usuários não incluem a senha: dados sensíveis não ficam no front-end.
+// Valores de tipo, prioridade e status seguem o Documento de Visão (2.2.1 a 2.2.3).
+
+// ---------- PROJETOS (Documento de Visão, 2.1 e 2.2) ----------
+const projetos = [
+    { id: 1, nome: 'Portal do Cliente' },
+    { id: 2, nome: 'App de Entregas' },
+    { id: 3, nome: 'Sistema Financeiro' },
+];
+
+// ---------- USUÁRIOS (três perfis, Documento de Visão 2.1) ----------
+// projetoIds: projetos aos quais o usuário está vinculado.
+const usuarios = [
+    { id: 1, nome: 'Ana Souza',      perfil: 'Administrador',    projetoIds: [1, 2, 3] },
+    { id: 2, nome: 'Carlos Lima',    perfil: 'Líder de Projeto', projetoIds: [1, 2] },
+    { id: 3, nome: 'Fernanda Rocha', perfil: 'Líder de Projeto', projetoIds: [3] },
+    { id: 4, nome: 'João Pereira',   perfil: 'Membro da Equipe', projetoIds: [1] },
+    { id: 5, nome: 'Mariana Alves',  perfil: 'Membro da Equipe', projetoIds: [1, 3] },
+    { id: 6, nome: 'Pedro Santos',   perfil: 'Membro da Equipe', projetoIds: [2] },
+];
+
+// ---------- DEMANDAS (campos do Documento de Visão, 2.2.5) ----------
+// responsavelId e prazo podem ser null (responsável e prazo opcionais).
+const demandas = [
+    // Projeto 1 - Portal do Cliente
+    {
+        id: 1,
+        titulo: 'Corrigir erro no login do portal',
+        descricao: 'Usuários com e-mail em letras maiúsculas não conseguem acessar o portal.',
+        tipo: 'Defeito',
+        prioridade: 'Crítica',
+        status: 'Aberta',
+        projetoId: 1,
+        responsavelId: 4,
+        criadaEm: '2026-10-05T09:15:00',
+        atualizadaEm: '2026-10-05T09:15:00',
+        prazo: '2026-10-09',
+    },
+    {
+        id: 2,
+        titulo: 'Criar tela de histórico de pedidos',
+        descricao: 'Exibir os pedidos do cliente com data, valor e situação.',
+        tipo: 'Tarefa',
+        prioridade: 'Alta',
+        status: 'Em andamento',
+        projetoId: 1,
+        responsavelId: 5,
+        criadaEm: '2026-09-28T14:00:00',
+        atualizadaEm: '2026-10-02T10:30:00',
+        prazo: '2026-10-16',
+    },
+    {
+        id: 3,
+        titulo: 'Documentar a API de chamados',
+        descricao: 'Descrever as rotas, parâmetros e respostas da API de abertura de chamados.',
+        tipo: 'Documentação',
+        prioridade: 'Baixa',
+        status: 'Aberta',
+        projetoId: 1,
+        responsavelId: null,
+        criadaEm: '2026-10-06T11:20:00',
+        atualizadaEm: '2026-10-06T11:20:00',
+        prazo: null,
+    },
+    {
+        id: 4,
+        titulo: 'Melhorar o tempo de carregamento da página inicial',
+        descricao: 'Reduzir o tamanho das imagens e carregar os scripts de forma assíncrona.',
+        tipo: 'Melhoria',
+        prioridade: 'Média',
+        status: 'Em revisão',
+        projetoId: 1,
+        responsavelId: 4,
+        criadaEm: '2026-09-20T08:45:00',
+        atualizadaEm: '2026-10-06T16:10:00',
+        prazo: '2026-10-08',
+    },
+
+    // Projeto 2 - App de Entregas
+    {
+        id: 5,
+        titulo: 'Localização do entregador não atualiza',
+        descricao: 'A posição no mapa fica parada após o aplicativo ir para segundo plano.',
+        tipo: 'Defeito',
+        prioridade: 'Crítica',
+        status: 'Em andamento',
+        projetoId: 2,
+        responsavelId: 6,
+        criadaEm: '2026-10-01T07:50:00',
+        atualizadaEm: '2026-10-03T13:00:00',
+        prazo: '2026-10-10',
+    },
+    {
+        id: 6,
+        titulo: 'Notificar o cliente quando a entrega for concluída',
+        descricao: 'Enviar notificação push com o horário da entrega.',
+        tipo: 'Melhoria',
+        prioridade: 'Alta',
+        status: 'Aberta',
+        projetoId: 2,
+        responsavelId: 6,
+        criadaEm: '2026-10-04T10:00:00',
+        atualizadaEm: '2026-10-04T10:00:00',
+        prazo: '2026-10-23',
+    },
+    {
+        id: 7,
+        titulo: 'Integrar o mapa de rotas',
+        descricao: 'Exibir no aplicativo a rota sugerida até o endereço de entrega.',
+        tipo: 'Tarefa',
+        prioridade: 'Média',
+        status: 'Concluída',
+        projetoId: 2,
+        responsavelId: 2,
+        criadaEm: '2026-09-10T09:00:00',
+        atualizadaEm: '2026-09-25T17:40:00',
+        prazo: '2026-09-26',
+    },
+    {
+        id: 8,
+        titulo: 'Escrever o manual do entregador',
+        descricao: 'Guia de uso do aplicativo para novos entregadores.',
+        tipo: 'Documentação',
+        prioridade: 'Baixa',
+        status: 'Cancelada',
+        projetoId: 2,
+        responsavelId: 6,
+        criadaEm: '2026-09-05T15:30:00',
+        atualizadaEm: '2026-09-18T09:20:00',
+        prazo: '2026-09-30',
+    },
+
+    // Projeto 3 - Sistema Financeiro
+    {
+        id: 9,
+        titulo: 'Cálculo de juros incorreto em contas atrasadas',
+        descricao: 'Os juros estão sendo calculados sobre o valor já corrigido.',
+        tipo: 'Defeito',
+        prioridade: 'Alta',
+        status: 'Em revisão',
+        projetoId: 3,
+        responsavelId: 5,
+        criadaEm: '2026-09-29T11:00:00',
+        atualizadaEm: '2026-10-06T14:45:00',
+        prazo: '2026-10-14',
+    },
+    {
+        id: 10,
+        titulo: 'Gerar relatório mensal de contas a pagar',
+        descricao: 'Relatório com vencimentos do mês agrupados por fornecedor.',
+        tipo: 'Tarefa',
+        prioridade: 'Média',
+        status: 'Aberta',
+        projetoId: 3,
+        responsavelId: null,
+        criadaEm: '2026-10-07T08:30:00',
+        atualizadaEm: '2026-10-07T08:30:00',
+        prazo: '2026-10-30',
+    },
+    {
+        id: 11,
+        titulo: 'Exportar extrato em PDF',
+        descricao: 'Permitir baixar o extrato do período selecionado em PDF.',
+        tipo: 'Melhoria',
+        prioridade: 'Baixa',
+        status: 'Concluída',
+        projetoId: 3,
+        responsavelId: 3,
+        criadaEm: '2026-09-01T10:10:00',
+        atualizadaEm: '2026-09-19T18:00:00',
+        prazo: '2026-09-22',
+    },
+    {
+        id: 12,
+        titulo: 'Erro ao salvar conta duplicada',
+        descricao: 'O sistema permite cadastrar duas contas com o mesmo número de documento.',
+        tipo: 'Defeito',
+        prioridade: 'Crítica',
+        status: 'Aberta',
+        projetoId: 3,
+        responsavelId: null,
+        criadaEm: '2026-10-07T10:05:00',
+        atualizadaEm: '2026-10-07T10:05:00',
+        prazo: null,
+    },
+];
