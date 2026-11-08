@@ -1,153 +1,84 @@
-
 // Autor: Kauan Paixão
-// Validações da Tela de Login e envio dos dados para a API.
+// Rota de login: confere e-mail e senha no MySQL e devolve um token JWT.
+// Fica em servidor/src/routes/login.ts e é registrada no server.ts com:
+//   app.use('/api', loginRouter);
 
-// Endereço do backend (Node/Express). Troque se a porta for outra.
-var API_URL = "http://localhost:3000";
+import { Router, Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { RowDataPacket } from 'mysql2';
+import pool from '../db';
 
-window.addEventListener("DOMContentLoaded", function () {
-    var formulario = document.getElementById("formulario-login");
-    var email = document.getElementById("email");
-    var senha = document.getElementById("senha");
-    var botaoEntrar = document.getElementById("botao-entrar");
-    var aviso = document.getElementById("aviso-prototipo");
+const router = Router();
 
-    // Se veio da tela de cadastro, preenche o e-mail e mostra a mensagem.
-    var parametros = new URLSearchParams(window.location.search);
-    if (parametros.get("cadastro") === "ok") {
-        email.value = parametros.get("email") || "";
-        mostrarAviso("Conta criada! Agora faça login com seu e-mail e senha.", "#146c43");
+// Formato da linha que vem da tabela de usuários.
+// Ajuste os nomes das colunas se no Banco_PI_II.sql estiverem diferentes.
+interface UsuarioBanco extends RowDataPacket {
+  id: number;
+  nome: string;
+  email: string;
+  senha: string; // hash do bcrypt
+  perfil: string;
+}
+
+// POST /api/login
+router.post('/login', async (req: Request, res: Response) => {
+  const { email, senha } = req.body;
+
+  // 400: faltou e-mail ou senha
+  if (
+    typeof email !== 'string' ||
+    typeof senha !== 'string' ||
+    email.trim() === '' ||
+    senha === ''
+  ) {
+    res.status(400).json({ mensagem: 'Informe o e-mail e a senha.' });
+    return;
+  }
+
+  try {
+    const [linhas] = await pool.query<UsuarioBanco[]>(
+      'SELECT id, nome, email, senha, perfil FROM usuario WHERE email = ? LIMIT 1',
+      [email.trim()]
+    );
+
+    const usuario = linhas[0];
+
+    // Confere a senha digitada com o hash guardado no banco.
+    const senhaConfere = usuario
+      ? await bcrypt.compare(senha, usuario.senha)
+      : false;
+
+    // 401: mesma mensagem para e-mail inexistente ou senha errada,
+    // para não revelar quais e-mails existem no sistema.
+    if (!usuario || !senhaConfere) {
+      res.status(401).json({ mensagem: 'E-mail ou senha inválidos.' });
+      return;
     }
 
-    function mostrarAviso(texto, cor) {
-        aviso.textContent = texto;
-        aviso.style.color = cor;
+    const segredo = process.env.JWT_SECRET;
+    if (!segredo) {
+      console.error('JWT_SECRET não está definido no .env');
+      res.status(500).json({ mensagem: 'Erro de configuração do servidor.' });
+      return;
     }
 
-    function limparMensagem(campo) {
-        var mensagem = campo.parentElement.querySelector(".mensagem-erro");
+    // O verificarLogin lê esses dados do token nas próximas requisições.
+    const token = jwt.sign(
+      { id: usuario.id, nome: usuario.nome, perfil: usuario.perfil },
+      segredo,
+      { expiresIn: '8h' }
+    );
 
-        if (mensagem) {
-            mensagem.remove();
-        }
-
-        campo.style.borderColor = "";
-        campo.style.outline = "";
-    }
-
-    function mostrarErro(campo, mensagemTexto) {
-        limparMensagem(campo);
-
-        campo.style.borderColor = "#dc3545";
-        campo.style.outline = "3px solid #f8d7da";
-
-        var mensagem = document.createElement("p");
-        mensagem.className = "mensagem-erro";
-        mensagem.textContent = mensagemTexto;
-        mensagem.style.margin = "6px 0 0";
-        mensagem.style.color = "#842029";
-        mensagem.style.fontSize = "0.875rem";
-
-        campo.parentElement.appendChild(mensagem);
-    }
-
-    function validarEmail() {
-        var valor = email.value.trim();
-        var formatoEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-        limparMensagem(email);
-
-        if (valor === "") {
-            mostrarErro(email, "Informe o e-mail.");
-            return false;
-        }
-
-        if (!formatoEmail.test(valor)) {
-            mostrarErro(email, "Informe um e-mail em formato válido.");
-            return false;
-        }
-
-        return true;
-    }
-
-    function validarSenha() {
-        var valor = senha.value;
-
-        limparMensagem(senha);
-
-        if (valor.trim() === "") {
-            mostrarErro(senha, "Informe a senha.");
-            return false;
-        }
-
-        return true;
-    }
-
-    // Envia e-mail e senha para a API, que confere com o banco de dados.
-    async function fazerLogin() {
-        botaoEntrar.disabled = true;
-        mostrarAviso("Verificando...", "#626970");
-
-        try {
-            var resposta = await fetch(API_URL + "/api/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: email.value.trim(),
-                    senha: senha.value
-                })
-            });
-
-            var dados = await resposta.json();
-
-            // E-mail ou senha não batem com o banco.
-            if (!resposta.ok) {
-                mostrarAviso(dados.mensagem, "#842029");
-                return;
-            }
-
-            // Guarda quem está logado (id, nome, perfil) para as próximas telas.
-            sessionStorage.setItem("usuarioLogado", JSON.stringify(dados.usuario));
-
-            // Guarda o token: as próximas telas enviam ele no cabeçalho
-            // Authorization: "Bearer " + token, para o servidor saber quem é.
-            sessionStorage.setItem("token", dados.token);
-
-            mostrarAviso("Login realizado com sucesso! Redirecionando...", "#146c43");
-            window.location.href = "../dashboard.html";
-        } catch (erro) {
-            // Cai aqui quando o backend não está rodando.
-            mostrarAviso("Não foi possível conectar ao servidor. Verifique se a API está rodando.", "#842029");
-        } finally {
-            botaoEntrar.disabled = false;
-        }
-    }
-
-    function validarFormulario(evento) {
-        evento.preventDefault();
-
-        var emailValido = validarEmail();
-        var senhaValida = validarSenha();
-
-        if (!emailValido || !senhaValida) {
-            mostrarAviso("Corrija os campos destacados antes de continuar.", "#842029");
-            return;
-        }
-
-        fazerLogin();
-    }
-
-    // O botão "Entrar" é do tipo submit, então basta ouvir o envio do formulário
-    // (funciona também apertando Enter).
-    formulario.addEventListener("submit", validarFormulario);
-
-    email.addEventListener("input", function () {
-        limparMensagem(email);
-        mostrarAviso("", "");
+    // 200: o front grava token e usuario no sessionStorage.
+    res.status(200).json({
+      token,
+      usuario: { id: usuario.id, nome: usuario.nome, perfil: usuario.perfil }
     });
-
-    senha.addEventListener("input", function () {
-        limparMensagem(senha);
-        mostrarAviso("", "");
-    });
+  } catch (erro) {
+    console.error('Erro no login:', erro);
+    res.status(500).json({ mensagem: 'Erro interno ao fazer login.' });
+  }
 });
+
+export default router;
