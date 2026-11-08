@@ -109,7 +109,7 @@ window.addEventListener("DOMContentLoaded", function () {
             sessionStorage.setItem("usuarioLogado", JSON.stringify(dados.usuario));
 
             mostrarAviso("Login realizado com sucesso! Redirecionando...", "#146c43");
-            window.location.href = "../dashboard.html";
+            window.location.href = "pages/dashboard.html";
         } catch (erro) {
             // Cai aqui quando o backend não está rodando.
             mostrarAviso("Não foi possível conectar ao servidor. Verifique se a API está rodando.", "#842029");

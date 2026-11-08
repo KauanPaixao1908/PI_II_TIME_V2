@@ -1,0 +1,168 @@
+<!-- Autor: Bruno Mareto -->
+<!--
+    Tela de Listagem de Demandas.
+    A tabela começa vazia e é montada pelo listagemdemanda.js a partir dos
+    dados de listagem-dados.js. Os filtros seguem o Documento de Visão
+    (tipos 2.2.1, prioridades 2.2.2, status 2.2.3, filtros e busca 2.3).
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listagem de Demandas - Projeto Integrador</title>
+    <link rel="stylesheet" href="../css/listagemdemanda.css">
+</head>
+<body>
+    <header id="barra-superior">
+        <div class="container" id="conteudo-barra">
+            <span id="nome-projeto">Projeto Integrador</span>
+            <nav id="navegacao-principal">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="listagemdemanda.html" class="link-ativo">Demandas</a>
+                <!-- Nome e perfil do usuário logado, preenchidos pelo JS -->
+                <span id="usuario-logado"></span>
+                <a href="../index.html" id="link-sair">Sair</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container" id="area-demandas">
+        <div id="cabecalho">
+            <div id="cabecalho-texto">
+                <h1>Listagem de Demandas</h1>
+                <p id="descricao-pagina">Encontre demandas por título, descrição ou critérios específicos.</p>
+            </div>
+            <!-- Escondido pelo JS para o perfil Membro da Equipe (seção 2.1.3) -->
+            <a href="cadastro-demanda.html" id="botao-nova-demanda">+ Nova demanda</a>
+        </div>
+
+        <section id="box-filtros" aria-labelledby="titulo-filtros">
+            <div class="faixa-azul"><h2 id="titulo-filtros">Filtros e busca</h2></div>
+            <form id="form-filtros" novalidate>
+                <div class="campo" id="campo-busca">
+                    <label for="busca">Buscar por título ou descrição</label>
+                    <input type="search" id="busca" placeholder="Digite uma palavra ou trecho..." aria-describedby="ajuda-filtros erro-busca" minlength="2" maxlength="60">
+                    <span class="erro-campo" id="erro-busca" role="alert"></span>
+                </div>
+                <p id="ajuda-filtros">Combine os critérios para refinar os resultados.</p>
+                <div class="linha-filtros">
+                    <div class="campo">
+                        <label for="status">Status</label>
+                        <select id="status">
+                            <option value="">Todos</option>
+                            <option value="Aberta">Aberta</option>
+                            <option value="Em andamento">Em andamento</option>
+                            <option value="Em revisão">Em revisão</option>
+                            <option value="Concluída">Concluída</option>
+                            <option value="Cancelada">Cancelada</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="prioridade">Prioridade</label>
+                        <select id="prioridade">
+                            <option value="">Todas</option>
+                            <option value="Crítica">Crítica</option>
+                            <option value="Alta">Alta</option>
+                            <option value="Média">Média</option>
+                            <option value="Baixa">Baixa</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="tipo">Tipo</label>
+                        <select id="tipo">
+                            <option value="">Todos</option>
+                            <option value="Tarefa">Tarefa</option>
+                            <option value="Defeito">Defeito</option>
+                            <option value="Melhoria">Melhoria</option>
+                            <option value="Documentação">Documentação</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="responsavel">Responsável</label>
+                        <!-- O value é o id do usuário, igual ao responsavelId dos dados -->
+                        <select id="responsavel">
+                            <option value="">Todos</option>
+                            <option value="1">Ana Souza</option>
+                            <option value="2">Carlos Lima</option>
+                            <option value="3">Fernanda Rocha</option>
+                            <option value="4">João Pereira</option>
+                            <option value="5">Mariana Alves</option>
+                            <option value="6">Pedro Santos</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="projeto">Projeto</label>
+                        <!-- O value é o id do projeto, igual ao projetoId dos dados -->
+                        <select id="projeto">
+                            <option value="">Todos</option>
+                            <option value="1">Portal do Cliente</option>
+                            <option value="2">App de Entregas</option>
+                            <option value="3">Sistema Financeiro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="linha-acoes">
+                    <div class="campo">
+                        <label for="ordenacao">Ordenar por</label>
+                        <select id="ordenacao">
+                            <option value="criacao-desc">Criação: mais recentes primeiro</option>
+                            <option value="criacao-asc">Criação: mais antigas primeiro</option>
+                            <option value="prioridade-asc">Prioridade: crítica para baixa</option>
+                            <option value="prioridade-desc">Prioridade: baixa para crítica</option>
+                            <option value="prazo-asc">Prazo: mais próximo primeiro</option>
+                            <option value="prazo-desc">Prazo: mais distante primeiro</option>
+                            <option value="status-asc">Status: do início ao fim do ciclo</option>
+                            <option value="status-desc">Status: do fim ao início do ciclo</option>
+                        </select>
+                    </div>
+                    <div id="botoes-filtros">
+                        <button type="submit" class="botao-primario">Aplicar filtros</button>
+                        <button type="reset" class="botao-secundario">Limpar filtros</button>
+                    </div>
+                </div>
+                <p id="status-formulario" role="status" aria-live="polite" hidden></p>
+            </form>
+        </section>
+
+        <section id="box-listagem" aria-labelledby="titulo-listagem">
+            <div id="titulo-box">
+                <h2 id="titulo-listagem">Resultados da busca</h2>
+                <span id="contador-resultados" role="status" aria-live="polite">Carregando...</span>
+            </div>
+            <div id="box-tabela" tabindex="0" role="region" aria-label="Tabela de demandas com rolagem horizontal">
+                <table id="tabela-demandas">
+                    <caption>Demandas cadastradas (dados de teste).</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Título</th>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Prioridade</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Projeto</th>
+                            <th scope="col">Responsável</th>
+                            <th scope="col">Data de criação</th>
+                            <th scope="col">Prazo de finalização</th>
+                            <th scope="col">Ações</th>
+                        </tr>
+                    </thead>
+                    <!-- Começa vazio: as linhas são criadas pelo listagemdemanda.js -->
+                    <tbody id="corpo-tabela"></tbody>
+                </table>
+                <p id="sem-resultados" hidden>Nenhuma demanda encontrada. Altere a busca ou limpe os filtros.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer id="rodape">
+        <div class="container" id="conteudo-rodape">
+            <span>Português (Brasil)</span>
+            <span>Projeto Integrador · Demandas</span>
+        </div>
+    </footer>
+
+    <!-- Os dados vêm primeiro: o listagemdemanda.js usa as listas definidas nele -->
+    <script src="../js/listagem-dados.js"></script>
+    <script src="../js/listagemdemanda.js"></script>
+</body>
+</html>

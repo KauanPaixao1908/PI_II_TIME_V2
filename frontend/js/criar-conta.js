@@ -124,7 +124,7 @@ window.addEventListener("DOMContentLoaded", function () {
             // Conta criada: volta para o login já com o e-mail preenchido.
             mostrarAviso(dados.mensagem + " Redirecionando para o login...", "#146c43");
             setTimeout(function () {
-                window.location.href = "Tela_Login.html?cadastro=ok&email=" +
+                window.location.href = "index.html?cadastro=ok&email=" +
                     encodeURIComponent(email.value.trim());
             }, 1200);
         } catch (erro) {
