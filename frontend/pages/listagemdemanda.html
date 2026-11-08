@@ -1,8 +1,8 @@
 <!-- Autor: Bruno Mareto -->
 <!--
     Tela de Listagem de Demandas.
-    A tabela começa vazia e é montada pelo listagemdemanda.js a partir dos
-    dados de listagem-dados.js. Os filtros seguem o Documento de Visão
+    A tabela começa vazia e é montada pelo listagemdemanda.js com os dados
+    da API (GET /api/demandas). Os filtros seguem o Documento de Visão
     (tipos 2.2.1, prioridades 2.2.2, status 2.2.3, filtros e busca 2.3).
 -->
 <!DOCTYPE html>
@@ -132,7 +132,7 @@
             </div>
             <div id="box-tabela" tabindex="0" role="region" aria-label="Tabela de demandas com rolagem horizontal">
                 <table id="tabela-demandas">
-                    <caption>Demandas cadastradas (dados de teste).</caption>
+                    <caption>Demandas cadastradas.</caption>
                     <thead>
                         <tr>
                             <th scope="col">Título</th>
@@ -161,8 +161,6 @@
         </div>
     </footer>
 
-    <!-- Os dados vêm primeiro: o listagemdemanda.js usa as listas definidas nele -->
-    <script src="../js/listagem-dados.js"></script>
     <script src="../js/listagemdemanda.js"></script>
 </body>
 </html>

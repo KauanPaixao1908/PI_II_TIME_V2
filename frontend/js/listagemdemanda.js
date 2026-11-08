@@ -1,18 +1,18 @@
 // Autor: Bruno Mareto
 //
 // Tela de Listagem de Demandas.
-// - Monta a tabela a partir dos dados de listagem-dados.js (Documento de
-//   Visão, 2.2.9: título, tipo, prioridade, status, projeto, responsável,
+// - Busca as demandas na API (GET /api/demandas) e monta a tabela (Documento
+//   de Visão, 2.2.9: título, tipo, prioridade, status, projeto, responsável,
 //   data de criação e prazo de finalização).
-// - Aplica filtros por status, prioridade, tipo, responsável e projeto,
-//   busca textual por título ou descrição e ordenação por criação,
-//   prioridade, prazo ou status (Documento de Visão, 2.3).
+// - Envia à API os filtros por status, prioridade, tipo, responsável e
+//   projeto, a busca textual por título ou descrição e a ordenação por
+//   criação, prioridade, prazo ou status (Documento de Visão, 2.3).
 // - Respeita o perfil do usuário logado (Documento de Visão, 2.1): o
 //   Administrador vê todas as demandas; Líder de Projeto e Membro da Equipe
 //   veem só as dos projetos vinculados; o Membro não cria demandas.
 // - Valida o formulário de filtros e busca (Reunião 3).
-// Nesta etapa a tela ainda não está integrada à API (Reunião 4); as regras de
-// filtro e ordenação são as mesmas da rota GET /demandas do back-end.
+// Filtragem, busca e ordenação são feitas pelo back-end; a tela só monta a
+// URL com os parâmetros escolhidos e exibe a resposta.
 
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -61,52 +61,39 @@ document.addEventListener('DOMContentLoaded', function () {
         'Cancelada': 'cancelada',
     };
 
-    // Posição de cada valor na ordenação: prioridade da mais urgente para a
-    // menos urgente (2.2.2) e status na ordem do ciclo de vida (2.2.4).
-    const ORDEM_PRIORIDADE = {
-        'Crítica': 0,
-        'Alta': 1,
-        'Média': 2,
-        'Baixa': 3,
-    };
-
-    const ORDEM_STATUS = {
-        'Aberta': 0,
-        'Em andamento': 1,
-        'Em revisão': 2,
-        'Concluída': 3,
-        'Cancelada': 4,
-    };
-
 
     // ---------- 2. PERFIL DO USUÁRIO (Documento de Visão, 2.1) ----------
 
-    // Chave combinada com a tela de login: o login grava o usuário que entrou
-    // (id, nome, perfil e projetoIds, sem senha) e as outras telas leem.
+    // Chaves combinadas com a tela de login: o login grava em sessionStorage o
+    // usuário que entrou (id, nome, perfil e projetoIds, sem senha) e o token.
     const CHAVE_USUARIO = 'usuarioLogado';
+    const CHAVE_TOKEN = 'token';
 
     // Lê o usuário guardado no navegador. Devolve null se não houver ninguém
     // logado ou se o valor guardado não for um JSON válido.
     function lerUsuarioLogado() {
         try {
-            const texto = localStorage.getItem(CHAVE_USUARIO);
+            const texto = sessionStorage.getItem(CHAVE_USUARIO);
             return texto ? JSON.parse(texto) : null;
         } catch (erro) {
             return null;
         }
     }
 
+    // Projetos vinculados ao usuário; lista vazia quando o login não os informar.
+    function projetosDoUsuario(usuario) {
+        return Array.isArray(usuario.projetoIds) ? usuario.projetoIds : [];
+    }
+
     // Administrador vê todos os projetos (2.1.1); Líder (2.1.2) e Membro (2.1.3)
     // veem só as demandas dos projetos aos quais estão vinculados.
-    function demandasVisiveis(usuario) {
-        if (usuario === null) {
-            return [];
-        }
+    function filtrarPorPerfil(lista, usuario) {
         if (usuario.perfil === 'Administrador') {
-            return demandas;
+            return lista;
         }
-        return demandas.filter(function (demanda) {
-            return usuario.projetoIds.includes(demanda.projetoId);
+        const vinculados = projetosDoUsuario(usuario);
+        return lista.filter(function (demanda) {
+            return demanda.projeto !== null && vinculados.includes(demanda.projeto.id);
         });
     }
 
@@ -128,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (usuario.perfil !== 'Administrador') {
             const opcoes = Array.from(campoProjeto.options);
             for (const opcao of opcoes) {
-                if (opcao.value !== '' && !usuario.projetoIds.includes(Number(opcao.value))) {
+                if (opcao.value !== '' && !projetosDoUsuario(usuario).includes(Number(opcao.value))) {
                     opcao.remove();
                 }
             }
@@ -137,25 +124,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const usuarioLogado = lerUsuarioLogado();
 
-    // Demandas que a tela pode mostrar, conforme o perfil.
-    const listaBase = demandasVisiveis(usuarioLogado);
-
 
     // ---------- 3. CONVERSÃO DOS DADOS PARA A TELA ----------
 
-    // Os dados guardam só o id do projeto; a tabela mostra o nome.
-    function nomeDoProjeto(projetoId) {
-        const projeto = projetos.find(function (p) { return p.id === projetoId; });
+    // A API devolve o projeto e o responsável como { id, nome }.
+    function nomeDoProjeto(projeto) {
         return projeto ? projeto.nome : 'Projeto não encontrado';
     }
 
-    // O responsável é opcional (2.2.5): responsavelId pode ser null.
-    function nomeDoResponsavel(responsavelId) {
-        if (responsavelId === null) {
-            return 'Sem responsável';
-        }
-        const usuario = usuarios.find(function (u) { return u.id === responsavelId; });
-        return usuario ? usuario.nome : 'Usuário não encontrado';
+    // O responsável é opcional (2.2.5): a API devolve null quando não há.
+    function nomeDoResponsavel(responsavel) {
+        return responsavel ? responsavel.nome : 'Sem responsável';
     }
 
     // Converte "2026-10-09" ou "2026-10-09T08:30:00" para "09/10/2026".
@@ -206,8 +185,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 criarCelula(demanda.tipo),
                 criarEtiqueta(demanda.prioridade, CLASSE_PRIORIDADE[demanda.prioridade]),
                 criarEtiqueta(demanda.status, CLASSE_STATUS[demanda.status]),
-                criarCelula(nomeDoProjeto(demanda.projetoId)),
-                criarCelula(nomeDoResponsavel(demanda.responsavelId)),
+                criarCelula(nomeDoProjeto(demanda.projeto)),
+                criarCelula(nomeDoResponsavel(demanda.responsavel)),
                 criarCelula(formatarData(demanda.criadaEm), 'data'),
                 criarCelula(formatarData(demanda.prazo), 'data')
             );
@@ -232,16 +211,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // ---------- 5. FILTROS, BUSCA E ORDENAÇÃO (2.3) ----------
+    // ---------- 5. FILTROS, BUSCA E ORDENAÇÃO NA API (2.3) ----------
 
-    // Remove acentos e diferença entre maiúsculas e minúsculas,
-    // para "relatorio" encontrar "Relatório".
-    function normalizar(texto) {
-        return texto
-            .normalize('NFD')                   // separa a letra do acento: "ó" vira "o" + "´"
-            .replace(/[\u0300-\u036f]/g, '')    // apaga os acentos separados
-            .toLowerCase();
-    }
+    // Nome do campo de ordenação na API para cada opção do <select>.
+    const CAMPO_ORDENACAO_API = {
+        criacao: 'criadaEm',
+        prioridade: 'prioridade',
+        prazo: 'prazo',
+        status: 'status',
+    };
 
     // Lê os valores atuais do formulário. Campo vazio = sem filtro.
     function lerFiltros() {
@@ -255,75 +233,64 @@ document.addEventListener('DOMContentLoaded', function () {
         };
     }
 
-    // Mantém só as demandas que passam em todos os filtros preenchidos.
-    function filtrarDemandas(lista, filtros) {
-        const termo = normalizar(filtros.busca);
+    // Monta os parâmetros da URL, por exemplo:
+    // status=Aberta&prioridade=Alta&ordenar=prazo&ordem=asc
+    // Filtros vazios não são enviados.
+    function montarParametros(filtros, opcaoOrdenacao) {
+        const parametros = new URLSearchParams();
 
-        return lista.filter(function (demanda) {
-            if (filtros.status !== '' && demanda.status !== filtros.status) {
-                return false;
+        for (const nome in filtros) {
+            if (filtros[nome] !== '') {
+                parametros.append(nome, filtros[nome]);
             }
-            if (filtros.prioridade !== '' && demanda.prioridade !== filtros.prioridade) {
-                return false;
-            }
-            if (filtros.tipo !== '' && demanda.tipo !== filtros.tipo) {
-                return false;
-            }
-            // O value do <select> é texto ("4"); o id nos dados é número (4).
-            if (filtros.responsavelId !== '' && demanda.responsavelId !== Number(filtros.responsavelId)) {
-                return false;
-            }
-            if (filtros.projetoId !== '' && demanda.projetoId !== Number(filtros.projetoId)) {
-                return false;
-            }
-            // Busca textual no título ou na descrição.
-            if (termo !== '') {
-                const textoDaDemanda = normalizar(demanda.titulo + ' ' + demanda.descricao);
-                if (!textoDaDemanda.includes(termo)) {
-                    return false;
-                }
-            }
-            return true;
-        });
+        }
+
+        const partes = opcaoOrdenacao.split('-');   // "prazo-asc" -> ["prazo", "asc"]
+        parametros.append('ordenar', CAMPO_ORDENACAO_API[partes[0]]);
+        parametros.append('ordem', partes[1]);
+
+        return parametros;
     }
 
-    // Ordena uma cópia da lista. A opção vem do <select>, por exemplo "prazo-asc".
-    // Demandas sem prazo ficam sempre no fim, nas duas direções.
-    function ordenarDemandas(lista, opcao) {
-        const partes = opcao.split('-');       // "prazo-asc" -> ["prazo", "asc"]
-        const campo = partes[0];
-        const fator = partes[1] === 'desc' ? -1 : 1;
+    // Busca as demandas na API e redesenha a tabela.
+    // Devolve quantas demandas foram exibidas, ou null se a busca falhar.
+    async function carregarDemandas(filtros, opcaoOrdenacao) {
+        const url = '/api/demandas?' + montarParametros(filtros, opcaoOrdenacao).toString();
 
-        const copia = lista.slice();           // sort altera o array; a lista original fica intacta
+        // O token do login acompanha a requisição, para a API identificar o usuário.
+        const cabecalhos = {};
+        const token = sessionStorage.getItem(CHAVE_TOKEN);
+        if (token) {
+            cabecalhos.Authorization = 'Bearer ' + token;
+        }
 
-        copia.sort(function (a, b) {
-            if (campo === 'prazo') {
-                if (a.prazo === null && b.prazo === null) return 0;
-                if (a.prazo === null) return 1;      // a vai para o fim
-                if (b.prazo === null) return -1;     // b vai para o fim
-                return fator * a.prazo.localeCompare(b.prazo);
-            }
-            if (campo === 'criacao') {
-                return fator * a.criadaEm.localeCompare(b.criadaEm);
-            }
-            if (campo === 'prioridade') {
-                return fator * (ORDEM_PRIORIDADE[a.prioridade] - ORDEM_PRIORIDADE[b.prioridade]);
-            }
-            if (campo === 'status') {
-                return fator * (ORDEM_STATUS[a.status] - ORDEM_STATUS[b.status]);
-            }
-            return 0;
-        });
+        contador.textContent = 'Carregando...';
 
-        return copia;
+        try {
+            const resposta = await fetch(url, { headers: cabecalhos });
+            const dados = await resposta.json();
+
+            // 400: algum filtro com valor inválido; a API explica qual.
+            if (!resposta.ok) {
+                renderizarTabela([]);
+                definirStatusFormulario(dados.erro || 'Não foi possível carregar as demandas.', 'erro');
+                return null;
+            }
+
+            const visiveis = filtrarPorPerfil(dados.demandas, usuarioLogado);
+            renderizarTabela(visiveis);
+            return visiveis.length;
+        } catch (erro) {
+            // Servidor desligado ou resposta que não é JSON.
+            renderizarTabela([]);
+            definirStatusFormulario('Não foi possível conectar ao servidor. Verifique se a API está rodando.', 'erro');
+            return null;
+        }
     }
 
-    // Filtra, ordena e redesenha a tabela. Devolve quantas demandas sobraram.
+    // Aplica os filtros escolhidos no formulário.
     function aplicarFiltros() {
-        const filtradas = filtrarDemandas(listaBase, lerFiltros());
-        const ordenadas = ordenarDemandas(filtradas, campoOrdenacao.value);
-        renderizarTabela(ordenadas);
-        return ordenadas.length;
+        return carregarDemandas(lerFiltros(), campoOrdenacao.value);
     }
 
 
@@ -379,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Revalida a busca a cada tecla, para o erro sumir assim que for corrigido.
     campoBusca.addEventListener('input', validarBusca);
 
-    formulario.addEventListener('submit', function (evento) {
+    formulario.addEventListener('submit', async function (evento) {
         evento.preventDefault();
 
         if (!validarBusca()) {
@@ -388,7 +355,11 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const total = aplicarFiltros();
+        const total = await aplicarFiltros();
+
+        if (total === null) {
+            return;
+        }
 
         if (total === 0) {
             definirStatusFormulario('Nenhuma demanda corresponde aos filtros escolhidos.', 'erro');
@@ -398,23 +369,30 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // O evento "reset" acontece ANTES de o navegador limpar os campos.
-    // Por isso a tabela é montada direto com a lista do perfil e a ordenação
-    // padrão, em vez de ler os campos (que ainda teriam os valores antigos).
+    // Por isso a busca é feita direto sem filtros e com a ordenação padrão,
+    // em vez de ler os campos (que ainda teriam os valores antigos).
     formulario.addEventListener('reset', function () {
         limparErro(campoBusca, erroBusca);
         statusFormulario.hidden = true;
         statusFormulario.textContent = '';
-        renderizarTabela(ordenarDemandas(listaBase, ORDENACAO_PADRAO));
+        carregarDemandas({}, ORDENACAO_PADRAO);
     });
 
-    // Sair: apaga o usuário guardado antes de ir para a tela de login.
+    // Sair: apaga o usuário e o token guardados antes de ir para a tela de login.
     linkSair.addEventListener('click', function () {
-        localStorage.removeItem(CHAVE_USUARIO);
+        sessionStorage.removeItem(CHAVE_USUARIO);
+        sessionStorage.removeItem(CHAVE_TOKEN);
     });
 
 
     // ---------- 8. INÍCIO ----------
 
     aplicarPerfilNaTela(usuarioLogado);
-    aplicarFiltros();
+
+    // Sem usuário logado, a tela não busca demandas.
+    if (usuarioLogado === null) {
+        renderizarTabela([]);
+    } else {
+        aplicarFiltros();
+    }
 });
