@@ -9,6 +9,11 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
 import listagemRouter from './routes/listagem';
+import loginRouter from './routes/login';
+import cadastroUsuarioRouter from './routes/cadastroUsuario';
+import comentariosRouter from './routes/comentarios';
+import historicoRouter from './routes/historico';
+import statusRouter from './routes/status';
 
 const app = express();
 
@@ -33,7 +38,12 @@ app.get('/api', (req: Request, res: Response) => {
 });
 
 // Rotas da API, uma por tela do sistema, todas com o prefixo /api.
-app.use('/api', listagemRouter); // GET /api/demandas (Bruno Mareto)
+app.use('/api', listagemRouter);        // GET /api/demandas e /api/demandas/filtros (Bruno Mareto)
+app.use('/api', statusRouter);          // PATCH /api/demandas/:id/status (Bruno Mareto)
+app.use('/api', loginRouter);           // POST /api/login (Kauan Paixão)
+app.use('/api', cadastroUsuarioRouter); // POST /api/cadastro (Kauan Paixão)
+app.use('/api', comentariosRouter);     // GET e POST /api/demandas/:id/comentarios (Kauan Paixão)
+app.use('/api', historicoRouter);       // GET /api/demandas/:id/historico (Kauan Paixão)
 
 // Inicia o servidor na porta definida acima.
 app.listen(PORTA, () => {

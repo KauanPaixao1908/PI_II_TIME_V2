@@ -1,30 +1,48 @@
 // Autor: Bruno Mareto
-// Rota de listagem de demandas: GET /demandas (Reunião 4).
-// Retorna as informações principais de cada demanda (Documento de Visão, 2.2.9)
-// e permite filtros, busca textual e ordenação (2.3). Os dados vêm de src/data.
+// Rotas da tela de Listagem de Demandas, com dados do MySQL.
 //
-// Parâmetros aceitos na URL (todos opcionais):
-//   status, prioridade, tipo       -> filtros por valor (ex.: ?prioridade=Alta)
-//   responsavelId, projetoId       -> filtros por id (ex.: ?projetoId=2)
-//   busca                          -> texto procurado no título ou na descrição
-//   ordenar                        -> prioridade | criadaEm | prazo | status
-//   ordem                          -> asc (padrão) | desc
-// Valores inválidos retornam 400 com uma mensagem de erro.
+// GET /api/demandas
+//   Lista as demandas com os campos exigidos no Documento de Visão (2.2.9),
+//   com filtros, busca textual e ordenação (2.3).
+//   Parâmetros aceitos na URL (todos opcionais):
+//     status, prioridade, tipo       -> filtros por valor (ex.: ?prioridade=Alta)
+//     responsavelId, projetoId       -> filtros por id (ex.: ?projetoId=2)
+//     busca                          -> texto procurado no título ou na descrição
+//     ordenar                        -> prioridade | criadaEm | prazo | status
+//     ordem                          -> asc (padrão) | desc
+//
+// GET /api/demandas/filtros
+//   Devolve os projetos e os responsáveis que o usuário pode usar nos filtros.
+//
+// Regras de acesso (2.1), aplicadas no servidor a partir do token do login:
+//   Administrador vê todas as demandas; Líder de Projeto e Membro da Equipe
+//   veem só as demandas dos projetos aos quais estão vinculados (projeto_usuario).
+//
+// Respostas: 200 (lista), 400 (parâmetro inválido), 401 (sem login), 500 (erro no banco).
 
 import { Router, Request, Response } from 'express';
-import { demandas } from '../data/demandas';
-import { projetos } from '../data/projetos';
-import { usuarios } from '../data/usuarios';
-import { Demanda, Prioridade, StatusDemanda, TipoDemanda } from '../tipos';
+import { RowDataPacket } from 'mysql2';
+import pool from '../db';
+import { verificarLogin } from './autentificacao';
 
 const router = Router();
 
-// Valores aceitos nos filtros, na ordem usada pela ordenação:
-// prioridade da mais urgente para a menos urgente e status conforme o ciclo de vida (2.2.4).
-const PRIORIDADES: Prioridade[] = ['Crítica', 'Alta', 'Média', 'Baixa'];
-const STATUS: StatusDemanda[] = ['Aberta', 'Em andamento', 'Em revisão', 'Concluída', 'Cancelada'];
-const TIPOS: TipoDemanda[] = ['Tarefa', 'Defeito', 'Melhoria', 'Documentação'];
-const CAMPOS_ORDENACAO = ['prioridade', 'criadaEm', 'prazo', 'status'];
+// Valores aceitos nos filtros, conforme o Documento de Visão (2.2.1 a 2.2.3).
+// A ordem das listas é a usada na ordenação: prioridade da mais urgente para a
+// menos urgente e status conforme o ciclo de vida (2.2.4).
+const PRIORIDADES = ['Crítica', 'Alta', 'Média', 'Baixa'];
+const STATUS = ['Aberta', 'Em andamento', 'Em revisão', 'Concluída', 'Cancelada'];
+const TIPOS = ['Tarefa', 'Defeito', 'Melhoria', 'Documentação'];
+const ORDENS = ['asc', 'desc'];
+
+// Expressão SQL usada para cada campo de ordenação. FIELD() devolve a posição do
+// valor na lista, para ordenar por urgência e pelo ciclo de vida, e não pelo alfabeto.
+const ORDENACAO_SQL: Record<string, string> = {
+    prioridade: "FIELD(d.prioridade, 'Crítica', 'Alta', 'Média', 'Baixa')",
+    status: "FIELD(d.status, 'Aberta', 'Em andamento', 'Em revisão', 'Concluída', 'Cancelada')",
+    criadaEm: 'd.data_criacao',
+    prazo: 'd.prazo_finalizacao',
+};
 
 // Erro de validação dos parâmetros da URL, respondido com 400.
 class ParametroInvalido extends Error {}
@@ -44,11 +62,11 @@ function lerTexto(req: Request, nome: string): string | undefined {
     if (typeof valor !== 'string') {
         throw new ParametroInvalido(`Informe apenas um valor para "${nome}".`);
     }
-    return valor;
+    return valor.trim();
 }
 
 // Lê um filtro de lista fechada e devolve o valor oficial (com acento e maiúscula).
-function lerOpcao<T extends string>(req: Request, nome: string, opcoes: T[]): T | undefined {
+function lerOpcao(req: Request, nome: string, opcoes: string[]): string | undefined {
     const valor = lerTexto(req, nome);
     if (valor === undefined) {
         return undefined;
@@ -73,54 +91,21 @@ function lerId(req: Request, nome: string): number | undefined {
     return id;
 }
 
-// Compara duas demandas pelo campo escolhido, em ordem crescente.
-function comparar(a: Demanda, b: Demanda, campo: string): number {
-    switch (campo) {
-        case 'prioridade':
-            return PRIORIDADES.indexOf(a.prioridade) - PRIORIDADES.indexOf(b.prioridade);
-        case 'status':
-            return STATUS.indexOf(a.status) - STATUS.indexOf(b.status);
-        case 'criadaEm':
-            return a.criadaEm.localeCompare(b.criadaEm);
-        default:
-            return (a.prazo ?? '').localeCompare(b.prazo ?? '');
+// Condição SQL que limita as demandas aos projetos do usuário logado.
+// O Administrador não tem restrição.
+function condicaoDePerfil(req: Request): { sql: string; valores: number[] } {
+    const usuario = req.usuario!;
+    if (usuario.perfil === 'Administrador') {
+        return { sql: '', valores: [] };
     }
-}
-
-// Ordena a lista sem alterar o array original. Na ordenação por prazo,
-// demandas sem prazo ficam sempre no final, tanto em asc quanto em desc.
-function ordenarLista(lista: Demanda[], campo: string, ordem: string): Demanda[] {
-    const sinal = ordem === 'desc' ? -1 : 1;
-    return [...lista].sort((a, b) => {
-        if (campo === 'prazo' && (a.prazo === null || b.prazo === null)) {
-            return (a.prazo === null ? 1 : 0) - (b.prazo === null ? 1 : 0);
-        }
-        return sinal * comparar(a, b, campo);
-    });
-}
-
-// Monta o item da listagem com os campos exigidos em 2.2.9,
-// trocando os ids de projeto e responsável pelos nomes.
-function paraListagem(demanda: Demanda) {
-    const projeto = projetos.find((p) => p.id === demanda.projetoId);
-    const responsavel = usuarios.find((u) => u.id === demanda.responsavelId);
     return {
-        id: demanda.id,
-        titulo: demanda.titulo,
-        tipo: demanda.tipo,
-        prioridade: demanda.prioridade,
-        status: demanda.status,
-        projeto: projeto ? { id: projeto.id, nome: projeto.nome } : null,
-        responsavel: responsavel ? { id: responsavel.id, nome: responsavel.nome } : null,
-        criadaEm: demanda.criadaEm,
-        prazo: demanda.prazo,
+        sql: 'd.projeto_id IN (SELECT pu.projeto_id FROM projeto_usuario pu WHERE pu.usuario_id = ?)',
+        valores: [usuario.id],
     };
 }
 
-// GET /demandas
-// 200: lista filtrada e ordenada, com o total de resultados.
-// 400: algum parâmetro da URL com valor inválido.
-router.get('/demandas', (req: Request, res: Response) => {
+// GET /api/demandas
+router.get('/demandas', verificarLogin, async (req: Request, res: Response) => {
     try {
         const status = lerOpcao(req, 'status', STATUS);
         const prioridade = lerOpcao(req, 'prioridade', PRIORIDADES);
@@ -128,34 +113,123 @@ router.get('/demandas', (req: Request, res: Response) => {
         const responsavelId = lerId(req, 'responsavelId');
         const projetoId = lerId(req, 'projetoId');
         const busca = lerTexto(req, 'busca');
-        const ordenar = lerOpcao(req, 'ordenar', CAMPOS_ORDENACAO);
-        const ordem = lerOpcao(req, 'ordem', ['asc', 'desc']) ?? 'asc';
+        const ordenar = lerOpcao(req, 'ordenar', Object.keys(ORDENACAO_SQL)) ?? 'criadaEm';
+        const ordem = lerOpcao(req, 'ordem', ORDENS) ?? 'asc';
 
-        let resultado = demandas.filter((d) =>
-            (status === undefined || d.status === status) &&
-            (prioridade === undefined || d.prioridade === prioridade) &&
-            (tipo === undefined || d.tipo === tipo) &&
-            (responsavelId === undefined || d.responsavelId === responsavelId) &&
-            (projetoId === undefined || d.projetoId === projetoId) &&
-            (busca === undefined ||
-                normalizar(d.titulo).includes(normalizar(busca)) ||
-                normalizar(d.descricao).includes(normalizar(busca)))
-        );
+        // Cada filtro preenchido acrescenta uma condição; os valores vão em
+        // "?" separados, para o MySQL tratar como dado e não como comando SQL.
+        const condicoes: string[] = [];
+        const valores: (string | number)[] = [];
 
-        if (ordenar !== undefined) {
-            resultado = ordenarLista(resultado, ordenar, ordem);
+        const perfil = condicaoDePerfil(req);
+        if (perfil.sql !== '') {
+            condicoes.push(perfil.sql);
+            valores.push(...perfil.valores);
+        }
+        if (status !== undefined) {
+            condicoes.push('d.status = ?');
+            valores.push(status);
+        }
+        if (prioridade !== undefined) {
+            condicoes.push('d.prioridade = ?');
+            valores.push(prioridade);
+        }
+        if (tipo !== undefined) {
+            condicoes.push('d.tipo = ?');
+            valores.push(tipo);
+        }
+        if (responsavelId !== undefined) {
+            condicoes.push('d.responsavel_id = ?');
+            valores.push(responsavelId);
+        }
+        if (projetoId !== undefined) {
+            condicoes.push('d.projeto_id = ?');
+            valores.push(projetoId);
+        }
+        if (busca !== undefined) {
+            // A collation utf8mb4 do banco já ignora acentos e maiúsculas no LIKE.
+            condicoes.push('(d.titulo LIKE ? OR d.descricao LIKE ?)');
+            valores.push(`%${busca}%`, `%${busca}%`);
         }
 
-        res.status(200).json({
-            total: resultado.length,
-            demandas: resultado.map(paraListagem),
-        });
+        const where = condicoes.length > 0 ? 'WHERE ' + condicoes.join(' AND ') : '';
+        const direcao = ordem === 'desc' ? 'DESC' : 'ASC';
+
+        // Na ordenação por prazo, demandas sem prazo ficam sempre no final.
+        const semPrazoNoFim = ordenar === 'prazo' ? 'd.prazo_finalizacao IS NULL, ' : '';
+        const orderBy = `ORDER BY ${semPrazoNoFim}${ORDENACAO_SQL[ordenar]} ${direcao}, d.id ${direcao}`;
+
+        const [linhas] = await pool.query<RowDataPacket[]>(
+            `SELECT d.id, d.titulo, d.tipo, d.prioridade, d.status,
+                    d.data_criacao AS criadaEm, d.prazo_finalizacao AS prazo,
+                    d.responsavel_id AS responsavelId,
+                    p.id AS projetoId, p.nome AS projetoNome,
+                    u.nome AS responsavelNome
+               FROM demanda d
+               JOIN projeto p ON p.id = d.projeto_id
+               LEFT JOIN usuario u ON u.id = d.responsavel_id
+               ${where}
+               ${orderBy}`,
+            valores
+        );
+
+        // Monta cada item com o projeto e o responsável como { id, nome }.
+        const demandas = linhas.map((linha) => ({
+            id: linha.id,
+            titulo: linha.titulo,
+            tipo: linha.tipo,
+            prioridade: linha.prioridade,
+            status: linha.status,
+            projeto: { id: linha.projetoId, nome: linha.projetoNome },
+            responsavel: linha.responsavelId === null
+                ? null
+                : { id: linha.responsavelId, nome: linha.responsavelNome },
+            criadaEm: linha.criadaEm,
+            prazo: linha.prazo,
+        }));
+
+        res.status(200).json({ total: demandas.length, demandas });
     } catch (erro) {
         if (erro instanceof ParametroInvalido) {
             res.status(400).json({ erro: erro.message });
             return;
         }
-        throw erro;
+        console.error('Erro ao listar demandas:', erro);
+        res.status(500).json({ erro: 'Erro interno ao listar as demandas.' });
+    }
+});
+
+// GET /api/demandas/filtros
+// Projetos e responsáveis visíveis para o usuário, usados nos <select> da tela.
+router.get('/demandas/filtros', verificarLogin, async (req: Request, res: Response) => {
+    try {
+        const usuario = req.usuario!;
+        const ehAdmin = usuario.perfil === 'Administrador';
+
+        const [projetos] = await pool.query<RowDataPacket[]>(
+            ehAdmin
+                ? 'SELECT id, nome FROM projeto ORDER BY nome'
+                : `SELECT p.id, p.nome FROM projeto p
+                     JOIN projeto_usuario pu ON pu.projeto_id = p.id
+                    WHERE pu.usuario_id = ? ORDER BY p.nome`,
+            ehAdmin ? [] : [usuario.id]
+        );
+
+        // Responsáveis: usuários vinculados aos mesmos projetos (todos, para o Administrador).
+        const [responsaveis] = await pool.query<RowDataPacket[]>(
+            ehAdmin
+                ? 'SELECT id, nome FROM usuario ORDER BY nome'
+                : `SELECT DISTINCT u.id, u.nome FROM usuario u
+                     JOIN projeto_usuario pu ON pu.usuario_id = u.id
+                    WHERE pu.projeto_id IN (SELECT projeto_id FROM projeto_usuario WHERE usuario_id = ?)
+                    ORDER BY u.nome`,
+            ehAdmin ? [] : [usuario.id]
+        );
+
+        res.status(200).json({ projetos, responsaveis });
+    } catch (erro) {
+        console.error('Erro ao carregar filtros:', erro);
+        res.status(500).json({ erro: 'Erro interno ao carregar os filtros.' });
     }
 });
 

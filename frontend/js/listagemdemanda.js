@@ -7,12 +7,12 @@
 // - Envia à API os filtros por status, prioridade, tipo, responsável e
 //   projeto, a busca textual por título ou descrição e a ordenação por
 //   criação, prioridade, prazo ou status (Documento de Visão, 2.3).
-// - Respeita o perfil do usuário logado (Documento de Visão, 2.1): o
-//   Administrador vê todas as demandas; Líder de Projeto e Membro da Equipe
-//   veem só as dos projetos vinculados; o Membro não cria demandas.
+// - Carrega as opções de projeto e responsável da API (GET /api/demandas/filtros).
+// - Permite alterar o status de cada demanda (PATCH /api/demandas/:id/status),
+//   oferecendo só as transições do fluxo permitidas ao perfil (2.2.4).
+// - Respeita o perfil do usuário logado (2.1). As restrições de acesso são
+//   aplicadas pelo back-end; a tela só esconde o que o perfil não pode usar.
 // - Valida o formulário de filtros e busca (Reunião 3).
-// Filtragem, busca e ordenação são feitas pelo back-end; a tela só monta a
-// URL com os parâmetros escolhidos e exibe a resposta.
 
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -61,11 +61,26 @@ document.addEventListener('DOMContentLoaded', function () {
         'Cancelada': 'cancelada',
     };
 
+    // Fluxo de status (2.2.4): para cada status, os próximos permitidos.
+    // As mesmas regras são conferidas pelo back-end, que é quem decide.
+    const TRANSICOES = {
+        'Aberta': ['Em andamento', 'Cancelada'],
+        'Em andamento': ['Em revisão', 'Cancelada'],
+        'Em revisão': ['Concluída', 'Em andamento', 'Cancelada'],
+        'Concluída': [],
+        'Cancelada': [],
+    };
 
-    // ---------- 2. PERFIL DO USUÁRIO (Documento de Visão, 2.1) ----------
+    // O Membro da Equipe só faz estas transições, e só nas demandas dele (2.1.3).
+    const TRANSICOES_MEMBRO = {
+        'Aberta': ['Em andamento'],
+        'Em andamento': ['Em revisão'],
+    };
 
-    // Chaves combinadas com a tela de login: o login grava em sessionStorage o
-    // usuário que entrou (id, nome, perfil e projetoIds, sem senha) e o token.
+
+    // ---------- 2. USUÁRIO LOGADO (Documento de Visão, 2.1) ----------
+
+    // Chaves gravadas pela tela de login em sessionStorage.
     const CHAVE_USUARIO = 'usuarioLogado';
     const CHAVE_TOKEN = 'token';
 
@@ -80,26 +95,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Projetos vinculados ao usuário; lista vazia quando o login não os informar.
-    function projetosDoUsuario(usuario) {
-        return Array.isArray(usuario.projetoIds) ? usuario.projetoIds : [];
-    }
+    const usuarioLogado = lerUsuarioLogado();
+    const token = sessionStorage.getItem(CHAVE_TOKEN);
 
-    // Administrador vê todos os projetos (2.1.1); Líder (2.1.2) e Membro (2.1.3)
-    // veem só as demandas dos projetos aos quais estão vinculados.
-    function filtrarPorPerfil(lista, usuario) {
-        if (usuario.perfil === 'Administrador') {
-            return lista;
-        }
-        const vinculados = projetosDoUsuario(usuario);
-        return lista.filter(function (demanda) {
-            return demanda.projeto !== null && vinculados.includes(demanda.projeto.id);
-        });
-    }
-
-    // Ajusta o cabeçalho, o botão de cadastro e o filtro de projeto ao perfil.
+    // Ajusta o cabeçalho e o botão de cadastro ao perfil.
     function aplicarPerfilNaTela(usuario) {
-        if (usuario === null) {
+        if (usuario === null || !token) {
             textoUsuario.textContent = 'Nenhum usuário logado';
             botaoNovaDemanda.hidden = true;
             semResultados.textContent = 'Entre pelo login para ver as demandas.';
@@ -110,22 +111,68 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // O Membro da Equipe não cria demandas (2.1.3).
         botaoNovaDemanda.hidden = usuario.perfil === 'Membro da Equipe';
+    }
 
-        // Fora o Administrador, o filtro de projeto mostra só os projetos vinculados.
-        if (usuario.perfil !== 'Administrador') {
-            const opcoes = Array.from(campoProjeto.options);
-            for (const opcao of opcoes) {
-                if (opcao.value !== '' && !projetosDoUsuario(usuario).includes(Number(opcao.value))) {
-                    opcao.remove();
-                }
-            }
+    // Status para os quais o usuário pode mover a demanda, conforme o perfil.
+    function transicoesPermitidas(demanda) {
+        if (usuarioLogado.perfil === 'Membro da Equipe') {
+            const ehResponsavel = demanda.responsavel !== null && demanda.responsavel.id === usuarioLogado.id;
+            return ehResponsavel ? (TRANSICOES_MEMBRO[demanda.status] || []) : [];
+        }
+        return TRANSICOES[demanda.status] || [];
+    }
+
+
+    // ---------- 3. COMUNICAÇÃO COM A API ----------
+
+    // Faz a requisição com o token do login e devolve { resposta, dados }.
+    // Sessão vencida ou inválida (401): limpa o login e avisa o usuário.
+    async function chamarApi(url, opcoes) {
+        const configuracao = opcoes || {};
+        configuracao.headers = Object.assign({}, configuracao.headers, {
+            Authorization: 'Bearer ' + token,
+        });
+
+        const resposta = await fetch(url, configuracao);
+        const dados = await resposta.json();
+
+        if (resposta.status === 401) {
+            sessionStorage.removeItem(CHAVE_USUARIO);
+            sessionStorage.removeItem(CHAVE_TOKEN);
+            semResultados.textContent = 'Sua sessão expirou. Entre novamente pelo login.';
+        }
+
+        return { resposta: resposta, dados: dados };
+    }
+
+    // Preenche um <select> com as opções da API, mantendo a primeira ("Todos").
+    function preencherSelect(campo, itens) {
+        while (campo.options.length > 1) {
+            campo.remove(1);
+        }
+        for (const item of itens) {
+            const opcao = document.createElement('option');
+            opcao.value = item.id;
+            opcao.textContent = item.nome;
+            campo.append(opcao);
         }
     }
 
-    const usuarioLogado = lerUsuarioLogado();
+    // Carrega os projetos e responsáveis que o usuário pode usar nos filtros.
+    async function carregarOpcoesDosFiltros() {
+        try {
+            const { resposta, dados } = await chamarApi('/api/demandas/filtros');
+            if (resposta.ok) {
+                preencherSelect(campoProjeto, dados.projetos);
+                preencherSelect(campoResponsavel, dados.responsaveis);
+            }
+        } catch (erro) {
+            // Sem as opções, os filtros de projeto e responsável ficam só com "Todos".
+        }
+    }
 
 
-    // ---------- 3. CONVERSÃO DOS DADOS PARA A TELA ----------
+    // ---------- 4. CONVERSÃO DOS DADOS PARA A TELA ----------
 
     // A API devolve o projeto e o responsável como { id, nome }.
     function nomeDoProjeto(projeto) {
@@ -137,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return responsavel ? responsavel.nome : 'Sem responsável';
     }
 
-    // Converte "2026-10-09" ou "2026-10-09T08:30:00" para "09/10/2026".
+    // Converte "2026-10-09" ou "2026-10-09 08:30:00" para "09/10/2026".
     // O prazo é opcional (2.2.5): null vira "Sem prazo".
     function formatarData(textoIso) {
         if (textoIso === null) {
@@ -148,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // ---------- 4. MONTAGEM DA TABELA ----------
+    // ---------- 5. MONTAGEM DA TABELA ----------
 
     // Cria uma célula com texto simples e, opcionalmente, uma classe.
     function criarCelula(texto, classe) {
@@ -173,6 +220,39 @@ document.addEventListener('DOMContentLoaded', function () {
         return celula;
     }
 
+    // Cria a lista de alteração de status, só com as transições permitidas.
+    // Devolve null quando o usuário não pode mover a demanda.
+    function criarSeletorDeStatus(demanda) {
+        const opcoes = transicoesPermitidas(demanda);
+        if (opcoes.length === 0) {
+            return null;
+        }
+
+        const seletor = document.createElement('select');
+        seletor.classList.add('seletor-status');
+        seletor.setAttribute('aria-label', 'Alterar status: ' + demanda.titulo);
+
+        const primeira = document.createElement('option');
+        primeira.value = '';
+        primeira.textContent = 'Alterar status...';
+        seletor.append(primeira);
+
+        for (const status of opcoes) {
+            const opcao = document.createElement('option');
+            opcao.value = status;
+            opcao.textContent = status === 'Cancelada' ? 'Cancelar demanda' : 'Mover para ' + status;
+            seletor.append(opcao);
+        }
+
+        seletor.addEventListener('change', function () {
+            if (seletor.value !== '') {
+                alterarStatus(demanda, seletor.value, seletor);
+            }
+        });
+
+        return seletor;
+    }
+
     // Apaga as linhas atuais e cria uma linha para cada demanda da lista.
     function renderizarTabela(lista) {
         corpoTabela.innerHTML = '';
@@ -191,16 +271,25 @@ document.addEventListener('DOMContentLoaded', function () {
                 criarCelula(formatarData(demanda.prazo), 'data')
             );
 
-            // Leva para a tela de Detalhes da Demanda, informando o id na URL.
+            // Ações: ver detalhes (leva o id na URL) e alterar status.
             const celulaAcoes = document.createElement('td');
+            const caixaAcoes = document.createElement('div');
+            caixaAcoes.classList.add('caixa-acoes');
+
             const link = document.createElement('a');
             link.textContent = 'Ver detalhes';
             link.classList.add('botao-detalhes');
             link.href = 'detalhes-demanda.html?id=' + demanda.id;
             link.setAttribute('aria-label', 'Ver detalhes: ' + demanda.titulo);
-            celulaAcoes.append(link);
-            linha.append(celulaAcoes);
+            caixaAcoes.append(link);
 
+            const seletor = criarSeletorDeStatus(demanda);
+            if (seletor !== null) {
+                caixaAcoes.append(seletor);
+            }
+
+            celulaAcoes.append(caixaAcoes);
+            linha.append(celulaAcoes);
             corpoTabela.append(linha);
         }
 
@@ -211,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // ---------- 5. FILTROS, BUSCA E ORDENAÇÃO NA API (2.3) ----------
+    // ---------- 6. FILTROS, BUSCA E ORDENAÇÃO NA API (2.3) ----------
 
     // Nome do campo de ordenação na API para cada opção do <select>.
     const CAMPO_ORDENACAO_API = {
@@ -252,34 +341,29 @@ document.addEventListener('DOMContentLoaded', function () {
         return parametros;
     }
 
+    // Filtros e ordenação da última busca, reaplicados depois de alterar um status.
+    let ultimaBusca = { filtros: {}, ordenacao: ORDENACAO_PADRAO };
+
     // Busca as demandas na API e redesenha a tabela.
     // Devolve quantas demandas foram exibidas, ou null se a busca falhar.
     async function carregarDemandas(filtros, opcaoOrdenacao) {
+        ultimaBusca = { filtros: filtros, ordenacao: opcaoOrdenacao };
         const url = '/api/demandas?' + montarParametros(filtros, opcaoOrdenacao).toString();
-
-        // O token do login acompanha a requisição, para a API identificar o usuário.
-        const cabecalhos = {};
-        const token = sessionStorage.getItem(CHAVE_TOKEN);
-        if (token) {
-            cabecalhos.Authorization = 'Bearer ' + token;
-        }
 
         contador.textContent = 'Carregando...';
 
         try {
-            const resposta = await fetch(url, { headers: cabecalhos });
-            const dados = await resposta.json();
+            const { resposta, dados } = await chamarApi(url);
 
-            // 400: algum filtro com valor inválido; a API explica qual.
+            // 400: algum filtro com valor inválido; 401: sessão vencida.
             if (!resposta.ok) {
                 renderizarTabela([]);
-                definirStatusFormulario(dados.erro || 'Não foi possível carregar as demandas.', 'erro');
+                definirStatusFormulario(dados.erro || dados.mensagem || 'Não foi possível carregar as demandas.', 'erro');
                 return null;
             }
 
-            const visiveis = filtrarPorPerfil(dados.demandas, usuarioLogado);
-            renderizarTabela(visiveis);
-            return visiveis.length;
+            renderizarTabela(dados.demandas);
+            return dados.demandas.length;
         } catch (erro) {
             // Servidor desligado ou resposta que não é JSON.
             renderizarTabela([]);
@@ -294,7 +378,43 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // ---------- 6. VALIDAÇÃO DA BUSCA (Reunião 3) ----------
+    // ---------- 7. ALTERAÇÃO DE STATUS (2.2.4) ----------
+
+    // Envia o novo status à API, mostra o resultado e atualiza a tabela.
+    async function alterarStatus(demanda, novoStatus, seletor) {
+        const pergunta = novoStatus === 'Cancelada'
+            ? 'Cancelar a demanda "' + demanda.titulo + '"? Ela não poderá voltar a ser movida.'
+            : 'Mover a demanda "' + demanda.titulo + '" de ' + demanda.status + ' para ' + novoStatus + '?';
+
+        if (!window.confirm(pergunta)) {
+            seletor.value = '';
+            return;
+        }
+
+        seletor.disabled = true;
+
+        try {
+            const { resposta, dados } = await chamarApi('/api/demandas/' + demanda.id + '/status', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: novoStatus }),
+            });
+
+            if (resposta.ok) {
+                definirStatusFormulario(dados.mensagem, 'sucesso');
+            } else {
+                // 400: transição proibida; 403: sem permissão; 404: demanda inexistente.
+                definirStatusFormulario(dados.erro || dados.mensagem || 'Não foi possível alterar o status.', 'erro');
+            }
+        } catch (erro) {
+            definirStatusFormulario('Não foi possível conectar ao servidor. Verifique se a API está rodando.', 'erro');
+        }
+
+        await carregarDemandas(ultimaBusca.filtros, ultimaBusca.ordenacao);
+    }
+
+
+    // ---------- 8. VALIDAÇÃO DA BUSCA (Reunião 3) ----------
 
     // Destaca o campo (CSS: [aria-invalid="true"]) e escreve a mensagem de erro.
     function mostrarErro(campo, elementoErro, mensagem) {
@@ -341,7 +461,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    // ---------- 7. EVENTOS ----------
+    // ---------- 9. EVENTOS ----------
 
     // Revalida a busca a cada tecla, para o erro sumir assim que for corrigido.
     campoBusca.addEventListener('input', validarBusca);
@@ -385,14 +505,15 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 
-    // ---------- 8. INÍCIO ----------
+    // ---------- 10. INÍCIO ----------
 
     aplicarPerfilNaTela(usuarioLogado);
 
-    // Sem usuário logado, a tela não busca demandas.
-    if (usuarioLogado === null) {
+    // Sem login, a tela não chama a API (as rotas exigem o token).
+    if (usuarioLogado === null || !token) {
         renderizarTabela([]);
     } else {
+        carregarOpcoesDosFiltros();
         aplicarFiltros();
     }
 });

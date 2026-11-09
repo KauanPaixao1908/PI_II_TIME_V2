@@ -18,7 +18,7 @@ O sistema é uma aplicação web para gerenciar e acompanhar demandas de desenvo
 
 - Desenvolver um sistema de acompanhamento de demandas de desenvolvimento para organizar, distribuir e acompanhar tarefas, bugs, melhorias e outras atividades de seus projetos.
 
-## Tecnologias
+## Tecnologias e dependências
 
 | Camada | Tecnologias |
 | --- | --- |
@@ -26,24 +26,39 @@ O sistema é uma aplicação web para gerenciar e acompanhar demandas de desenvo
 | Back-end | Node.js (LTS), TypeScript e Express |
 | Banco de dados | MySQL |
 
+Bibliotecas do servidor (instaladas pelo `npm install`):
+
+| Biblioteca | Uso |
+| --- | --- |
+| `express` | Servidor HTTP e rotas da API |
+| `mysql2` | Conexão com o MySQL |
+| `bcrypt` | Hash das senhas dos usuários |
+| `jsonwebtoken` | Token de login (JWT) |
+| `dotenv` | Leitura das configurações do arquivo `.env` |
+| `typescript`, `tsx` | Compilação e execução do TypeScript (desenvolvimento) |
+
 ## Estrutura do projeto
 
 ```
 PI_II_TIME_V2/
-├── frontend/              Telas do sistema (entregues pelo servidor)
-│   ├── index.html         Login
-│   ├── criar-conta.html   Criação de conta
-│   ├── pages/             Dashboard, Listagem, Cadastro e Detalhes de demanda
-│   ├── css/               Um arquivo de estilo por tela
-│   └── js/                Um arquivo de script por tela
-└── servidor/              API (Node.js + TypeScript + Express)
-    ├── package.json       Dependências e comandos (npm run dev)
-    ├── tsconfig.json      Configuração do TypeScript
+├── banco/
+│   ├── Banco_PI_II.sql      Criação do banco, das tabelas e dos projetos
+│   └── dados_teste.sql      Carga de dados de teste (usuários, demandas, histórico)
+├── frontend/                Telas do sistema (entregues pelo servidor)
+│   ├── index.html           Login
+│   ├── criar-conta.html     Criação de conta
+│   ├── pages/               Dashboard, Listagem, Cadastro e Detalhes de demanda
+│   ├── css/                 Um arquivo de estilo por tela
+│   └── js/                  Um arquivo de script por tela
+└── servidor/                API (Node.js + TypeScript + Express)
+    ├── .env.example         Modelo das configurações de ambiente
+    ├── package.json         Dependências e comandos
     └── src/
-        ├── server.ts      Ponto de entrada: entrega o front-end e registra as rotas
-        ├── tipos.ts       Tipos de Demanda, Usuário, Projeto e Comentário
-        ├── routes/        Rotas da API, uma por tela
-        └── data/          Dados em memória (substituídos pelo banco na integração)
+        ├── server.ts        Ponto de entrada: entrega o front-end e registra as rotas
+        ├── db.ts            Conexão com o MySQL
+        ├── acessoDemanda.ts Verificação de acesso a uma demanda
+        ├── tipos.ts         Tipos de Demanda, Usuário, Projeto e Comentário
+        └── routes/          Rotas da API
 ```
 
 ## Como executar
@@ -52,40 +67,74 @@ PI_II_TIME_V2/
 
 - [Node.js](https://nodejs.org/) na versão LTS
 - [Git](https://git-scm.com/)
+- [MySQL Community Server](https://dev.mysql.com/downloads/mysql/) e [MySQL Workbench](https://dev.mysql.com/downloads/workbench/)
 
-### Passo a passo
+### 1. Baixar o projeto
 
-1. Clonar o repositório e entrar na pasta:
+```
+git clone https://github.com/KauanPaixao1908/PI_II_TIME_V2.git
+cd PI_II_TIME_V2
+git switch feature/integracao
+```
 
-   ```
-   git clone https://github.com/KauanPaixao1908/PI_II_TIME_V2.git
-   cd PI_II_TIME_V2
-   ```
+### 2. Criar o banco de dados
 
-2. Ir para a branch de integração, que reúne o front-end e o back-end:
+No MySQL Workbench, conectado ao servidor local, execute os scripts **nesta ordem**:
 
-   ```
-   git switch feature/integracao
-   ```
+1. `banco/Banco_PI_II.sql`: cria o banco `pi2_demandas`, as tabelas `usuario`, `projeto`, `projeto_usuario`, `demanda`, `comentario` e `historico`, e os projetos.
+2. `banco/dados_teste.sql`: cria os usuários de teste, os vínculos com os projetos, demandas, comentários e histórico.
 
-3. Instalar as dependências do servidor:
+Atenção: o `Banco_PI_II.sql` apaga e recria o banco. Executá-lo de novo remove todos os dados.
 
-   ```
-   cd servidor
-   npm install
-   ```
+### 3. Configurar o ambiente
 
-4. Iniciar o servidor:
+Dentro de `servidor/`, copie o arquivo `.env.example` para `.env` e preencha com os dados do seu MySQL:
 
-   ```
-   npm run dev
-   ```
+```
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=sua_senha_do_mysql
+DB_NAME=pi2_demandas
+JWT_SECRET=uma_chave_aleatoria
+```
 
-5. Abrir o sistema no navegador: **http://localhost:3000**
+Para gerar o `JWT_SECRET`:
 
-O servidor entrega as telas da pasta `frontend/` e responde à API no mesmo endereço, com o prefixo `/api`. Por isso as telas não devem ser abertas com dois cliques no arquivo: elas precisam ser acessadas pelo endereço do servidor.
+```
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+O arquivo `.env` não é enviado ao GitHub (está no `.gitignore`).
+
+### 4. Instalar e iniciar o servidor
+
+```
+cd servidor
+npm install
+npm run dev
+```
+
+O terminal deve mostrar `Servidor rodando em http://localhost:3000` e `Conectado ao MySQL.`
 
 > **Windows (PowerShell):** se o `npm` mostrar o erro "a execução de scripts foi desabilitada neste sistema", execute uma vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` e tente novamente.
+
+### 5. Abrir o sistema
+
+Acesse **http://localhost:3000** no navegador. O servidor entrega as telas da pasta `frontend/` e responde à API no mesmo endereço, com o prefixo `/api`. As telas não devem ser abertas com dois cliques no arquivo.
+
+### Usuários de teste
+
+Criados pelo `dados_teste.sql`. Todos usam a senha **senha123**.
+
+| E-mail | Nome | Perfil | Projetos |
+| --- | --- | --- | --- |
+| admin@pi2.com | Ana Souza | Administrador | Todos |
+| lider@pi2.com | Lucas Lima | Líder de Projeto | Portal Acadêmico e App Biblioteca |
+| maria@pi2.com | Maria Alves | Membro da Equipe | Portal Acadêmico |
+| joao@pi2.com | João Pereira | Membro da Equipe | Portal Acadêmico e App Biblioteca |
+
+Contas criadas pela tela **Criar conta** entram como Membro da Equipe.
 
 ### Outros comandos (dentro de `servidor/`)
 
@@ -96,18 +145,33 @@ O servidor entrega as telas da pasta `frontend/` e responde à API no mesmo ende
 | `npm run build` | Compila o TypeScript para JavaScript na pasta `dist/` |
 | `npm start` | Executa a versão compilada |
 
-## Banco de dados
+## Regras de negócio
 
-O script do banco (`Banco_PI_II.sql`) está na branch `Banco-de-dados`. Ele cria o banco `pi2_demandas` com as tabelas `usuario`, `projeto`, `projeto_usuario`, `demanda`, `comentario` e `historico`, além de dados de exemplo. Para criar o banco, execute o script no MySQL Workbench.
+**Fluxo de status:** Aberta → Em andamento → Em revisão → Concluída, com retorno de Em revisão para Em andamento. Demandas Abertas, Em andamento ou Em revisão podem ser canceladas. Não é permitido concluir direto de Em andamento, voltar para Aberta nem alterar demandas Concluídas ou Canceladas. Toda alteração de status é registrada no histórico. Não existe exclusão de demandas.
+
+**Perfis**, com as restrições aplicadas no back-end:
+
+| Perfil | Acesso |
+| --- | --- |
+| Administrador | Todas as demandas e todas as transições de status |
+| Líder de Projeto | Demandas dos projetos vinculados e todas as transições de status |
+| Membro da Equipe | Demandas dos projetos vinculados; altera o status só das demandas atribuídas a ele, de Aberta para Em andamento e de Em andamento para Em revisão; não cria, conclui nem cancela demandas |
 
 ## Rotas da API
 
-Todas as rotas usam o prefixo `/api` e respondem em JSON.
+Todas as rotas usam o prefixo `/api` e respondem em JSON. As rotas marcadas com 🔒 exigem o token do login no cabeçalho `Authorization: Bearer <token>`.
 
 | Método | Rota | Descrição | Respostas | Autor |
 | --- | --- | --- | --- | --- |
 | GET | `/api` | Confirma que a API está em execução | 200 | Bruno Mareto |
-| GET | `/api/demandas` | Lista as demandas com filtros, busca e ordenação | 200, 400 | Bruno Mareto |
+| POST | `/api/login` | Login com e-mail e senha; devolve o token e o usuário | 200, 400, 401 | Kauan Paixão |
+| POST | `/api/cadastro` | Cria uma conta (perfil Membro da Equipe) | 201, 400, 409 | Kauan Paixão |
+| GET 🔒 | `/api/demandas` | Lista as demandas visíveis ao usuário, com filtros, busca e ordenação | 200, 400, 401 | Bruno Mareto |
+| GET 🔒 | `/api/demandas/filtros` | Projetos e responsáveis disponíveis nos filtros | 200, 401 | Bruno Mareto |
+| PATCH 🔒 | `/api/demandas/:id/status` | Altera o status conforme o fluxo e o perfil | 200, 400, 401, 403, 404 | Bruno Mareto |
+| GET 🔒 | `/api/demandas/:id/comentarios` | Lista os comentários de uma demanda | 200, 400, 401, 403, 404 | Kauan Paixão |
+| POST 🔒 | `/api/demandas/:id/comentarios` | Registra um comentário | 201, 400, 401, 403, 404 | Kauan Paixão |
+| GET 🔒 | `/api/demandas/:id/historico` | Lista o histórico de alterações | 200, 400, 401, 403, 404 | Kauan Paixão |
 
 Parâmetros aceitos em `GET /api/demandas` (todos opcionais):
 
@@ -122,12 +186,32 @@ Parâmetros aceitos em `GET /api/demandas` (todos opcionais):
 | `ordenar` | `?ordenar=prazo` | prioridade, criadaEm, prazo ou status |
 | `ordem` | `?ordem=desc` | asc (padrão) ou desc |
 
-Exemplos para testar no navegador ou no Thunder Client:
+Corpo de `PATCH /api/demandas/:id/status`:
 
-- `http://localhost:3000/api/demandas?status=Aberta` → **200** com a lista
-- `http://localhost:3000/api/demandas?status=Pendente` → **400** com a mensagem de erro
+```json
+{ "status": "Em andamento" }
+```
 
-Cada integrante acrescenta aqui as rotas da sua tela quando elas forem registradas no `server.ts`.
+## Testes
+
+Os testes de API podem ser feitos no Thunder Client, Postman ou Insomnia. Primeiro, faça `POST /api/login` com `{ "email": "admin@pi2.com", "senha": "senha123" }` e use o `token` devolvido no cabeçalho `Authorization: Bearer <token>` das demais rotas.
+
+| Cenário | Requisição | Resultado esperado |
+| --- | --- | --- |
+| Login válido | `POST /api/login` com admin@pi2.com e senha123 | 200 com token |
+| Login inválido | `POST /api/login` com senha errada | 401 "E-mail ou senha inválidos." |
+| Acesso sem login | `GET /api/demandas` sem token | 401 |
+| Listagem com filtro | `GET /api/demandas?status=Aberta&ordenar=prioridade` | 200, críticas primeiro |
+| Filtro inválido | `GET /api/demandas?status=Pendente` | 400 com os valores aceitos |
+| Restrição por projeto | `GET /api/demandas` com maria@pi2.com | 200, só demandas do Portal Acadêmico |
+| Transição válida | `PATCH /api/demandas/1/status` `{ "status": "Em andamento" }` com maria@pi2.com | 200 e registro no histórico |
+| Transição proibida | `PATCH /api/demandas/2/status` `{ "status": "Concluída" }` com status Em andamento | 400 "Transição não permitida" |
+| Membro concluindo | `PATCH` para Concluída com maria@pi2.com em demanda Em revisão | 403 |
+| Membro em demanda de outro projeto | `PATCH /api/demandas/3/status` com maria@pi2.com | 403 |
+| Status final | `PATCH /api/demandas/4/status` `{ "status": "Aberta" }` | 400 |
+| Demanda inexistente | `PATCH /api/demandas/999/status` | 404 |
+
+Na interface: entrar com cada perfil em http://localhost:3000, conferir a listagem, os filtros e a alteração de status pela coluna **Ações** da Listagem de Demandas.
 
 ## Como trabalhar no repositório
 
@@ -145,3 +229,7 @@ Cada integrante acrescenta aqui as rotas da sua tela quando elas forem registrad
 4. Registrar a rota nova no `server.ts` com `app.use('/api', nomeDoRouter)`.
 
 Não envie arquivos pelo site do GitHub nas branches de outros integrantes: use sempre uma branch própria e um Pull Request.
+
+## Versão de entrega
+
+A versão apresentada à banca é marcada com a tag `1.0.0-final`.
