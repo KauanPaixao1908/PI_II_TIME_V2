@@ -1,11 +1,25 @@
-<!-- Autor: Leonardo Miziara -->
+<!-- Autor: Kauan Paixão -->
+<!-- Tela de Detalhes da Demanda: os dados vêm da API (MySQL) pelo detalhes-demanda.js.
+     A demanda é escolhida pelo ?id= da URL, ex.: detalhes-demanda.html?id=3 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro de Demanda - Projeto Integrador</title>
-    <link rel="stylesheet" href="../css/cadastro-demanda.css">
+    <title>Detalhes da Demanda - Projeto Integrador</title>
+    <link rel="stylesheet" href="../css/detalhes-demanda.css">
+    <!-- Estilos só das partes novas (comentários e histórico) -->
+    <style>
+        .lista-registros { list-style: none; margin: 0 0 16px; padding: 0; }
+        .lista-registros li { padding: 10px 0; border-bottom: 1px solid #dee2e6; }
+        .lista-registros li:last-child { border-bottom: none; }
+        .registro-topo { font-size: 0.85rem; color: #626970; margin-bottom: 4px; }
+        .registro-topo strong { color: #212529; }
+        .lista-vazia { color: #626970; font-style: italic; }
+        #texto-comentario { width: 100%; min-height: 80px; padding: 8px; box-sizing: border-box; font: inherit; resize: vertical; }
+        #form-comentario button { margin-top: 8px; }
+        .mensagem-aviso { margin: 8px 0 0; font-size: 0.9rem; }
+    </style>
 </head>
 <body>
 
@@ -16,158 +30,123 @@
             <nav id="navegacao-principal">
                 <a href="dashboard.html">Dashboard</a>
                 <a href="listagemdemanda.html" class="link-ativo">Demandas</a>
-                <a href="../index.html">Sair</a>
+                <a href="../index.html" id="link-sair">Sair</a>
             </nav>
         </div>
     </header>
 
-    <main class="container" id="area-cadastro">
+    <main class="container" id="area-detalhes">
 
         <section id="cabecalho-pagina">
             <div>
-                <h1>Cadastro de Demanda</h1>
+                <h1>Detalhes da Demanda</h1>
                 <p id="descricao-pagina">
-                    Preencha os campos abaixo para cadastrar uma nova demanda.
+                    Consulte todas as informações cadastradas para esta demanda.
                 </p>
             </div>
 
-            <a href="listagemdemanda.html" class="botao-voltar">Voltar para demandas</a>
+            <div id="acoes-cabecalho">
+                <a href="listagemdemanda.html" class="botao-secundario">Voltar</a>
+                <!-- O JS coloca o ?id= no link e esconde o botão para o Membro da Equipe -->
+                <a href="cadastro-demanda.html" id="botao-editar" class="botao-primario" hidden>Editar demanda</a>
+            </div>
         </section>
 
-        <section id="box-formulario" aria-labelledby="titulo-formulario">
+        <!-- Mensagem de carregamento ou de erro (demanda não encontrada, sem acesso...) -->
+        <p id="aviso-detalhes" role="status">Carregando demanda...</p>
+
+        <!-- Fica escondido até os dados chegarem da API -->
+        <section class="box" id="box-demanda" aria-labelledby="titulo-demanda" hidden>
             <div class="faixa-azul">
-                <h2 id="titulo-formulario">Informações da demanda</h2>
+                <div>
+                    <h2 id="titulo-demanda"></h2>
+                    <span class="codigo-demanda" id="codigo-demanda"></span>
+                </div>
+
+                <span class="etiqueta" id="etiqueta-status-topo"></span>
             </div>
 
-            <form id="formulario-demanda">
+            <div class="conteudo-box">
 
-                <div class="campo campo-grande">
-                    <label for="titulo">Título da demanda</label>
-                    <input
-                        type="text"
-                        id="titulo"
-                        name="titulo"
-                        placeholder="Ex.: Criar tela de login"
-                        required
-                    >
-                </div>
+                <section class="secao-detalhes">
+                    <h3>Descrição</h3>
+                    <p id="descricao-demanda"></p>
+                </section>
 
-                <div class="campo campo-grande">
-                    <label for="descricao">Descrição</label>
-                    <textarea
-                        id="descricao"
-                        name="descricao"
-                        rows="5"
-                        placeholder="Descreva o que deverá ser realizado..."
-                        required
-                    ></textarea>
-                </div>
+                <section class="secao-detalhes">
+                    <h3>Informações principais</h3>
 
-                <div class="linha-campos">
-                    <div class="campo">
-                        <label for="tipo">Tipo</label>
-                        <select id="tipo" name="tipo" required>
-                            <option value="">Selecione</option>
-                            <option>Funcionalidade</option>
-                            <option>Correção</option>
-                            <option>Melhoria</option>
-                        </select>
+                    <div class="grade-informacoes">
+                        <div class="item-informacao">
+                            <span class="rotulo">Tipo</span>
+                            <strong id="info-tipo"></strong>
+                        </div>
+
+                        <div class="item-informacao">
+                            <span class="rotulo">Prioridade</span>
+                            <span class="etiqueta" id="info-prioridade"></span>
+                        </div>
+
+                        <div class="item-informacao">
+                            <span class="rotulo">Status</span>
+                            <span class="etiqueta" id="info-status"></span>
+                        </div>
+
+                        <div class="item-informacao">
+                            <span class="rotulo">Projeto</span>
+                            <strong id="info-projeto"></strong>
+                        </div>
+
+                        <div class="item-informacao">
+                            <span class="rotulo">Responsável</span>
+                            <strong id="info-responsavel"></strong>
+                        </div>
+
+                        <div class="item-informacao">
+                            <span class="rotulo">Data de criação</span>
+                            <strong id="info-criacao"></strong>
+                        </div>
+
+                        <div class="item-informacao">
+                            <span class="rotulo">Última atualização</span>
+                            <strong id="info-atualizacao"></strong>
+                        </div>
+
+                        <div class="item-informacao">
+                            <span class="rotulo">Prazo de finalização</span>
+                            <strong id="info-prazo"></strong>
+                        </div>
                     </div>
+                </section>
 
-                    <div class="campo">
-                        <label for="prioridade">Prioridade</label>
-                        <select id="prioridade" name="prioridade" required>
-                            <option value="">Selecione</option>
-                            <option>Alta</option>
-                            <option>Média</option>
-                            <option>Baixa</option>
-                        </select>
-                    </div>
+                <section class="secao-detalhes">
+                    <h3>Comentários</h3>
+                    <ul class="lista-registros" id="lista-comentarios"></ul>
 
-                    <div class="campo">
-                        <label for="status">Status</label>
-                        <select id="status" name="status" required>
-                            <option value="">Selecione</option>
-                            <option>Pendente</option>
-                            <option>Em andamento</option>
-                            <option>Concluída</option>
-                        </select>
-                    </div>
-                </div>
+                    <form id="form-comentario" novalidate>
+                        <label for="texto-comentario">Novo comentário</label>
+                        <textarea id="texto-comentario" maxlength="2000" placeholder="Escreva um comentário"></textarea>
+                        <button type="submit" class="botao-primario" id="botao-comentar">Comentar</button>
+                        <p class="mensagem-aviso" id="aviso-comentario" role="status"></p>
+                    </form>
+                </section>
 
-                <div class="linha-campos">
-                    <div class="campo">
-                        <label for="projeto">Projeto</label>
-                        <select id="projeto" name="projeto" required>
-                            <option value="">Selecione</option>
-                            <option>Portal de Demandas</option>
-                            <option>Documentação do PI</option>
-                        </select>
-                    </div>
+                <section class="secao-detalhes ultima-secao">
+                    <h3>Histórico de alterações</h3>
+                    <ul class="lista-registros" id="lista-historico"></ul>
+                </section>
 
-                    <div class="campo">
-                        <label for="responsavel">Responsável</label>
-                        <select id="responsavel" name="responsavel" required>
-                            <option value="">Selecione</option>
-                            <option>Ana Martins</option>
-                            <option>Bruno Lima</option>
-                            <option>Carla Souza</option>
-                            <option>Diego Santos</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="linha-campos">
-                    <div class="campo">
-                        <label for="data-criacao">Data de criação</label>
-                        <input
-                            type="date"
-                            id="data-criacao"
-                            name="data-criacao"
-                        >
-                    </div>
-
-                    <div class="campo">
-                        <label for="prazo">Prazo de finalização</label>
-                        <input
-                            type="date"
-                            id="prazo"
-                            name="prazo"
-                            required
-                        >
-                    </div>
-                </div>
-
-                <div class="campo campo-grande">
-                    <label for="observacoes">Observações</label>
-                    <textarea
-                        id="observacoes"
-                        name="observacoes"
-                        rows="4"
-                        placeholder="Adicione informações complementares, se necessário."
-                    ></textarea>
-                </div>
-
-                <p id="aviso-formulario">
-                    Esta tela representa apenas a parte visual do cadastro. O envio e o armazenamento
-                    dos dados serão implementados posteriormente no back-end.
-                </p>
-
-                <div id="acoes-formulario">
-                    <a href="listagemdemanda.html" class="botao-secundario">Cancelar</a>
-                    <button type="submit" class="botao-primario">Cadastrar demanda</button>
-                </div>
-
-            </form>
+            </div>
         </section>
     </main>
 
     <footer id="rodape">
         <div class="container" id="conteudo-rodape">
             <span>Português (Brasil)</span>
-            <span>Projeto Integrador · Cadastro de demanda</span>
+            <span>Projeto Integrador · Detalhes da demanda</span>
         </div>
     </footer>
 
+    <script src="../js/detalhes-demanda.js"></script>
 </body>
 </html>
