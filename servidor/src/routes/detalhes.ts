@@ -1,211 +1,60 @@
 // Autor: Kauan Paixão
-// Arquivo: detalhes.ts
-// Função: rotas da tela de Detalhes da Demanda:
-//   GET  /demandas/:id  detalhes de uma demanda
-//   GET  /demandas/:id/comentarios lista os comentários da demanda
-//   POST /demandas/:id/comentarios registra um comentário novo
-//   GET  /demandas/:id/historico histórico de alterações da demanda
-// Os dados vêm de src/data/ (em memória, ainda sem banco) e os tipos de src/tipos.ts.
-// No server.ts esta rota é registrada assim:  app.use("/demandas", detalhesRouter);
+// Arquivo: detalhes.ts (fica em servidor/src/routes/)
+// Função: rota da tela de Detalhes da Demanda, buscando no MySQL.
+//   GET /api/demandas/:id -> dados da demanda, com o nome do projeto e do responsável
+// Os comentários e o histórico ficam em routes/comentarios.ts e routes/historico.ts.
+// No server.ts esta rota é registrada assim:  app.use('/api', detalhesRouter);
+//
+// Respostas:
+//   200 demanda encontrada
+//   400 id inválido (ex.: /api/demandas/abc)
+//   401 sem login (verificarLogin)
+//   403 Líder ou Membro que não participa do projeto da demanda
+//   404 demanda não existe
 
-import { Router, Request, Response } from "express";
-import { demandas } from "../data/demandas";
-import { projetos } from "../data/projetos";
-import { usuarios } from "../data/usuarios";
-import { comentarios } from "../data/comentarios";
-import { historico } from "../data/historico";
-import { Comentario } from "../tipos";
+import { Router, Request, Response } from 'express';
+import { RowDataPacket } from 'mysql2';
+import pool from '../db';
+import { verificarLogin } from './autentificacao';
+import { checarDemanda } from '../acessoDemanda';
 
 const router = Router();
 
-// Procura uma demanda pelo id (devolve undefined se não existir)
-function buscarDemanda(id: number) {
-    return demandas.find(function (demanda) {
-        return demanda.id === id;
-    });
-}
+// GET /api/demandas/:id
+router.get('/demandas/:id', verificarLogin, async (req: Request, res: Response) => {
+  try {
+    // Confere id, se a demanda existe e se o usuário pode vê-la.
+    const acesso = await checarDemanda(req, res);
+    if (!acesso) return; // já respondeu 400, 401, 403 ou 404
 
-// Data e hora atuais no formato do tipos.ts: AAAA-MM-DDTHH:mm:ss
-function dataHoraAgora(): string {
-    const agora = new Date();
+    // Os apelidos (AS) deixam os nomes no mesmo formato que o front já usava.
+    // LEFT JOIN no usuário porque a demanda pode estar sem responsável.
+    const [linhas] = await pool.query<RowDataPacket[]>(
+      `SELECT d.id,
+              d.titulo,
+              d.descricao,
+              d.tipo,
+              d.prioridade,
+              d.status,
+              d.projeto_id        AS projetoId,
+              p.nome              AS projetoNome,
+              d.responsavel_id    AS responsavelId,
+              COALESCE(u.nome, '') AS responsavelNome,
+              d.data_criacao      AS criadaEm,
+              d.data_atualizacao  AS atualizadaEm,
+              d.prazo_finalizacao AS prazo
+         FROM demanda d
+         JOIN projeto p      ON p.id = d.projeto_id
+         LEFT JOIN usuario u ON u.id = d.responsavel_id
+        WHERE d.id = ?`,
+      [acesso.demandaId]
+    );
 
-    function doisDigitos(numero: number): string {
-        return numero < 10 ? "0" + numero : String(numero);
-    }
-
-    return agora.getFullYear() + "-" +
-        doisDigitos(agora.getMonth() + 1) + "-" +
-        doisDigitos(agora.getDate()) + "T" +
-        doisDigitos(agora.getHours()) + ":" +
-        doisDigitos(agora.getMinutes()) + ":" +
-        doisDigitos(agora.getSeconds());
-}
-
-// Lê o :id da URL. Devolve null se não for um número inteiro positivo
-// (ex.: /demandas/abc), para a rota responder 400 em vez de 404.
-function lerId(req: Request): number | null {
-    const id = Number(req.params.id);
-    return Number.isInteger(id) && id > 0 ? id : null;
-}
-
-// Procura o nome de um usuário pelo id (vazio se não achar)
-function nomeDoUsuario(id: number | undefined | null): string {
-    const usuario = usuarios.find(function (u) {
-        return u.id === id;
-    });
-
-    return usuario ? usuario.nome : "";
-}
-
-// ---------------------------------------------------------------------
-// GET /demandas/:id
-// 200 com a demanda | 404 se não existir
-// ---------------------------------------------------------------------
-router.get("/:id", function (req: Request, res: Response) {
-    const id = lerId(req);
-    if (id === null) {
-        res.status(400).json({ mensagem: "Id da demanda inválido." });
-        return;
-    }
-
-    const demanda = buscarDemanda(id);
-
-    if (!demanda) {
-        res.status(404).json({ mensagem: "Demanda não encontrada." });
-        return;
-    }
-
-    // Junta o nome do projeto e do responsável para a tela mostrar
-    const projeto = projetos.find(function (p) {
-        return p.id === demanda.projetoId;
-    });
-
-    res.status(200).json({
-        ...demanda,
-        projetoNome: projeto ? projeto.nome : "",
-        responsavelNome: nomeDoUsuario(demanda.responsavelId)
-    });
-});
-
-// ---------------------------------------------------------------------
-// GET /demandas/:id/comentarios
-// 200 com a lista | 404 se a demanda não existir
-// ---------------------------------------------------------------------
-router.get("/:id/comentarios", function (req: Request, res: Response) {
-    const id = lerId(req);
-    if (id === null) {
-        res.status(400).json({ mensagem: "Id da demanda inválido." });
-        return;
-    }
-
-    if (!buscarDemanda(id)) {
-        res.status(404).json({ mensagem: "Demanda não encontrada." });
-        return;
-    }
-
-    // Só os comentários desta demanda, já com o nome de quem comentou
-    const lista = comentarios
-        .filter(function (c) {
-            return c.demandaId === id;
-        })
-        .map(function (c) {
-            return { ...c, autorNome: nomeDoUsuario(c.autorId) };
-        });
-
-    res.status(200).json(lista);
-});
-
-// ---------------------------------------------------------------------
-// POST /demandas/:id/comentarios
-// Corpo esperado: { "autorId": 3, "texto": "Meu comentário" }
-// 201 ao criar | 400 texto vazio ou autor inválido
-// 403 autor fora do projeto da demanda | 404 demanda não existe
-// ---------------------------------------------------------------------
-router.post("/:id/comentarios", function (req: Request, res: Response) {
-    const id = lerId(req);
-    if (id === null) {
-        res.status(400).json({ mensagem: "Id da demanda inválido." });
-        return;
-    }
-
-    const demanda = buscarDemanda(id);
-
-    if (!demanda) {
-        res.status(404).json({ mensagem: "Demanda não encontrada." });
-        return;
-    }
-
-    const texto: string = req.body && req.body.texto ? String(req.body.texto).trim() : "";
-    const autorId = Number(req.body ? req.body.autorId : 0);
-
-    if (texto === "") {
-        res.status(400).json({ mensagem: "O comentário não pode ficar vazio." });
-        return;
-    }
-
-    // O autor precisa ser um usuário que existe
-    const autor = usuarios.find(function (u) {
-        return u.id === autorId;
-    });
-
-    if (!autor) {
-        res.status(400).json({ mensagem: "Autor do comentário inválido." });
-        return;
-    }
-
-    // Só comenta quem participa do projeto da demanda (o Administrador vê tudo).
-    // Documento de Visão 2.1.2 e 2.1.3: Líder e Membro só acessam os seus projetos.
-    if (autor.perfil !== "Administrador" && !autor.projetoIds.includes(demanda.projetoId)) {
-        res.status(403).json({ mensagem: "Você não participa do projeto desta demanda." });
-        return;
-    }
-
-    // Cria o próximo id (maior id atual + 1)
-    let proximoId = 1;
-    comentarios.forEach(function (c) {
-        if (c.id >= proximoId) {
-            proximoId = c.id + 1;
-        }
-    });
-
-    const novo: Comentario = {
-        id: proximoId,
-        demandaId: id,
-        autorId: autorId,
-        texto: texto,
-        criadoEm: dataHoraAgora()
-    };
-
-    comentarios.push(novo);
-
-    res.status(201).json({ ...novo, autorNome: autor.nome });
-});
-
-// ---------------------------------------------------------------------
-// GET /demandas/:id/historico
-// 200 com a lista (mais antigo primeiro) | 404 se a demanda não existir
-// ---------------------------------------------------------------------
-router.get("/:id/historico", function (req: Request, res: Response) {
-    const id = lerId(req);
-    if (id === null) {
-        res.status(400).json({ mensagem: "Id da demanda inválido." });
-        return;
-    }
-
-    if (!buscarDemanda(id)) {
-        res.status(404).json({ mensagem: "Demanda não encontrada." });
-        return;
-    }
-
-    const lista = historico
-        .filter(function (h) {
-            return h.demandaId === id;
-        })
-        .sort(function (a, b) {
-            return a.criadoEm.localeCompare(b.criadoEm);
-        });
-
-    res.status(200).json(lista);
+    res.status(200).json(linhas[0]);
+  } catch (erro) {
+    console.error('Erro ao buscar a demanda:', erro);
+    res.status(500).json({ mensagem: 'Erro interno ao buscar a demanda.' });
+  }
 });
 
 export default router;

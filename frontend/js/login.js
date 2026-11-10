@@ -106,12 +106,12 @@ window.addEventListener("DOMContentLoaded", function () {
             }
 
             // Guarda quem está logado (id, nome, perfil) para as próximas telas.
-            sessionStorage.setItem("usuarioLogado", JSON.stringify(dados.usuario));        
+            sessionStorage.setItem("usuarioLogado", JSON.stringify(dados.usuario));
             // Token do login, enviado pelas outras telas no cabeçalho Authorization.
             sessionStorage.setItem("token", dados.token);
 
             mostrarAviso("Login realizado com sucesso! Redirecionando...", "#146c43");
-            window.location.href = "pages/dashboard.html";
+            window.location.href = "dashboard.html";
         } catch (erro) {
             // Cai aqui quando o backend não está rodando.
             mostrarAviso("Não foi possível conectar ao servidor. Verifique se a API está rodando.", "#842029");

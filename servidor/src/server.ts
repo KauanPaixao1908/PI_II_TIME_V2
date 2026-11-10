@@ -14,6 +14,8 @@ import cadastroUsuarioRouter from './routes/cadastroUsuario';
 import comentariosRouter from './routes/comentarios';
 import historicoRouter from './routes/historico';
 import statusRouter from './routes/status';
+import detalhesRouter from './routes/detalhes';
+import dashboardRouter from './routes/dashboard';
 
 const app = express();
 
@@ -26,8 +28,14 @@ const PASTA_FRONTEND = path.join(__dirname, '..', '..', 'frontend');
 // Permite receber o corpo das requisições em JSON (usado nas rotas POST, PUT e PATCH).
 app.use(express.json());
 
-// Entrega as telas do front-end. A página inicial (/) é o frontend/index.html (login).
+// Entrega as telas do front-end (pasta frontend/).
 app.use(express.static(PASTA_FRONTEND));
+
+// A tela de login fica em frontend/pages/Tela_Login.html. O endereço inicial (/)
+// e o antigo /index.html (usado pelos links "Sair") levam até ela.
+app.get(['/', '/index.html'], (req: Request, res: Response) => {
+    res.redirect('/pages/Tela_Login.html');
+});
 
 // Rota de verificação: confirma que a API está em execução.
 app.get('/api', (req: Request, res: Response) => {
@@ -44,6 +52,8 @@ app.use('/api', loginRouter);           // POST /api/login (Kauan Paixão)
 app.use('/api', cadastroUsuarioRouter); // POST /api/cadastro (Kauan Paixão)
 app.use('/api', comentariosRouter);     // GET e POST /api/demandas/:id/comentarios (Kauan Paixão)
 app.use('/api', historicoRouter);       // GET /api/demandas/:id/historico (Kauan Paixão)
+app.use('/api', detalhesRouter);        // GET /api/demandas/:id (Kauan Paixão)
+app.use('/api', dashboardRouter);       // GET /api/dashboard (Miguel Bueno)
 
 // Inicia o servidor na porta definida acima.
 app.listen(PORTA, () => {

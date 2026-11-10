@@ -1,4 +1,6 @@
 <!-- Autor: Kauan Paixão -->
+<!-- Tela de Detalhes da Demanda: os dados vêm da API (MySQL) pelo detalhes-demanda.js.
+     A demanda é escolhida pelo ?id= da URL, ex.: detalhes-demanda.html?id=3 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -6,6 +8,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalhes da Demanda - Projeto Integrador</title>
     <link rel="stylesheet" href="../css/detalhes-demanda.css">
+    <!-- Estilos só das partes novas (comentários e histórico) -->
+    <style>
+        .lista-registros { list-style: none; margin: 0 0 16px; padding: 0; }
+        .lista-registros li { padding: 10px 0; border-bottom: 1px solid #dee2e6; }
+        .lista-registros li:last-child { border-bottom: none; }
+        .registro-topo { font-size: 0.85rem; color: #626970; margin-bottom: 4px; }
+        .registro-topo strong { color: #212529; }
+        .lista-vazia { color: #626970; font-style: italic; }
+        #texto-comentario { width: 100%; min-height: 80px; padding: 8px; box-sizing: border-box; font: inherit; resize: vertical; }
+        #form-comentario button { margin-top: 8px; }
+        .mensagem-aviso { margin: 8px 0 0; font-size: 0.9rem; }
+    </style>
 </head>
 <body>
 
@@ -16,7 +30,7 @@
             <nav id="navegacao-principal">
                 <a href="dashboard.html">Dashboard</a>
                 <a href="listagemdemanda.html" class="link-ativo">Demandas</a>
-                <a href="../index.html">Sair</a>
+                <a href="../index.html" id="link-sair">Sair</a>
             </nav>
         </div>
     </header>
@@ -33,28 +47,30 @@
 
             <div id="acoes-cabecalho">
                 <a href="listagemdemanda.html" class="botao-secundario">Voltar</a>
-                <a href="cadastro-demanda.html" class="botao-primario">Editar demanda</a>
+                <!-- O JS coloca o ?id= no link e esconde o botão para o Membro da Equipe -->
+                <a href="cadastro-demanda.html" id="botao-editar" class="botao-primario" hidden>Editar demanda</a>
             </div>
         </section>
 
-        <section class="box" aria-labelledby="titulo-demanda">
+        <!-- Mensagem de carregamento ou de erro (demanda não encontrada, sem acesso...) -->
+        <p id="aviso-detalhes" role="status">Carregando demanda...</p>
+
+        <!-- Fica escondido até os dados chegarem da API -->
+        <section class="box" id="box-demanda" aria-labelledby="titulo-demanda" hidden>
             <div class="faixa-azul">
                 <div>
-                    <h2 id="titulo-demanda">Criar tela de login</h2>
-                    <span class="codigo-demanda">Demanda #001</span>
+                    <h2 id="titulo-demanda"></h2>
+                    <span class="codigo-demanda" id="codigo-demanda"></span>
                 </div>
 
-                <span class="etiqueta andamento">Em andamento</span>
+                <span class="etiqueta" id="etiqueta-status-topo"></span>
             </div>
 
             <div class="conteudo-box">
 
                 <section class="secao-detalhes">
                     <h3>Descrição</h3>
-                    <p>
-                        Desenvolver a tela de login do sistema seguindo o padrão visual
-                        definido para o Projeto Integrador.
-                    </p>
+                    <p id="descricao-demanda"></p>
                 </section>
 
                 <section class="secao-detalhes">
@@ -63,52 +79,61 @@
                     <div class="grade-informacoes">
                         <div class="item-informacao">
                             <span class="rotulo">Tipo</span>
-                            <strong>Funcionalidade</strong>
+                            <strong id="info-tipo"></strong>
                         </div>
 
                         <div class="item-informacao">
                             <span class="rotulo">Prioridade</span>
-                            <span class="etiqueta alta">Alta</span>
+                            <span class="etiqueta" id="info-prioridade"></span>
                         </div>
 
                         <div class="item-informacao">
                             <span class="rotulo">Status</span>
-                            <span class="etiqueta andamento">Em andamento</span>
+                            <span class="etiqueta" id="info-status"></span>
                         </div>
 
                         <div class="item-informacao">
                             <span class="rotulo">Projeto</span>
-                            <strong>Portal de Demandas</strong>
+                            <strong id="info-projeto"></strong>
                         </div>
 
                         <div class="item-informacao">
                             <span class="rotulo">Responsável</span>
-                            <strong>Ana Martins</strong>
-                        </div>
-
-                        <div class="item-informacao">
-                            <span class="rotulo">Criado por</span>
-                            <strong>Administrador</strong>
+                            <strong id="info-responsavel"></strong>
                         </div>
 
                         <div class="item-informacao">
                             <span class="rotulo">Data de criação</span>
-                            <strong>07/09/2026</strong>
+                            <strong id="info-criacao"></strong>
+                        </div>
+
+                        <div class="item-informacao">
+                            <span class="rotulo">Última atualização</span>
+                            <strong id="info-atualizacao"></strong>
                         </div>
 
                         <div class="item-informacao">
                             <span class="rotulo">Prazo de finalização</span>
-                            <strong>14/09/2026</strong>
+                            <strong id="info-prazo"></strong>
                         </div>
                     </div>
                 </section>
 
+                <section class="secao-detalhes">
+                    <h3>Comentários</h3>
+                    <ul class="lista-registros" id="lista-comentarios"></ul>
+
+                    <form id="form-comentario" novalidate>
+                        <label for="texto-comentario">Novo comentário</label>
+                        <textarea id="texto-comentario" maxlength="2000" placeholder="Escreva um comentário"></textarea>
+                        <button type="submit" class="botao-primario" id="botao-comentar">Comentar</button>
+                        <p class="mensagem-aviso" id="aviso-comentario" role="status"></p>
+                    </form>
+                </section>
+
                 <section class="secao-detalhes ultima-secao">
-                    <h3>Observações</h3>
-                    <p>
-                        A tela deverá utilizar HTML e CSS e manter o mesmo estilo visual
-                        das demais páginas do sistema.
-                    </p>
+                    <h3>Histórico de alterações</h3>
+                    <ul class="lista-registros" id="lista-historico"></ul>
                 </section>
 
             </div>
