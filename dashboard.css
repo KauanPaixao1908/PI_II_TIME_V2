@@ -477,3 +477,50 @@ a:focus-visible,
         flex: 1;
     }
 }
+
+/* Cores dos status e prioridades que vêm do banco
+   (Aberta, Em revisão, Cancelada, Crítica) */
+.aberta {
+    background-color: #fff3cd;
+    color: #664d03;
+}
+
+.revisao {
+    background-color: #e2d9f3;
+    color: #432874;
+}
+
+.cancelada {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.critica {
+    background-color: #dc3545;
+    color: white;
+}
+
+.barra-aberta {
+    background-color: #ffc107;
+}
+
+.barra-revisao {
+    background-color: #6f42c1;
+}
+
+.barra-cancelada {
+    background-color: #adb5bd;
+}
+
+.barra-critica {
+    background-color: #842029;
+}
+
+.titulo-demanda a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.titulo-demanda a:hover {
+    text-decoration: underline;
+}
