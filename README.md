@@ -76,6 +76,11 @@ git clone https://github.com/KauanPaixao1908/PI_II_TIME_V2.git
 cd PI_II_TIME_V2
 git switch feature/integracao
 ```
+Ou
+```
+Baixar a versão final
+1.0.0-final
+```
 
 ### 2. Criar o banco de dados
 
@@ -212,23 +217,6 @@ Os testes de API podem ser feitos no Thunder Client, Postman ou Insomnia. Primei
 | Demanda inexistente | `PATCH /api/demandas/999/status` | 404 |
 
 Na interface: entrar com cada perfil em http://localhost:3000, conferir a listagem, os filtros e a alteração de status pela coluna **Ações** da Listagem de Demandas.
-
-## Como trabalhar no repositório
-
-1. Atualizar e partir da branch de integração:
-
-   ```
-   git fetch
-   git switch feature/integracao
-   git pull
-   git switch -c feature/nome-da-tarefa
-   ```
-
-2. Fazer os commits pelo VS Code, com mensagens claras e comentário de autor nos arquivos novos.
-3. Enviar a branch (`git push -u origin feature/nome-da-tarefa`) e abrir um Pull Request para a `feature/integracao`.
-4. Registrar a rota nova no `server.ts` com `app.use('/api', nomeDoRouter)`.
-
-Não envie arquivos pelo site do GitHub nas branches de outros integrantes: use sempre uma branch própria e um Pull Request.
 
 ## Versão de entrega
 
