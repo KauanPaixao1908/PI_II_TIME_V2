@@ -1,5 +1,4 @@
 // Autor: Leonardo Miziara
-// Arquivo: demandas.ts (fica em servidor/src/routes/)
 // Função: cadastrar e editar demandas direto no MySQL (cards #14, #17, #24).
 //   POST /api/demandas       -> cadastra uma demanda (nasce sempre como 'Aberta')
 //   PUT  /api/demandas/:id   -> edita título, descrição, tipo, prioridade, responsável e prazo
