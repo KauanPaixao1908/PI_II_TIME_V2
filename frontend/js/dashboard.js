@@ -147,9 +147,7 @@ class Dashboard {
     }
 }
 
-// ----------------------------------------------------------------------
 // Funções de apoio
-// ----------------------------------------------------------------------
 
 // Cria um elemento com classe e texto (textContent: o texto nunca vira HTML).
 function criarElemento(tag, classe, texto) {
@@ -258,9 +256,7 @@ function preencherSelect(idSelect, opcoes) {
     });
 }
 
-// ----------------------------------------------------------------------
 // Início da tela
-// ----------------------------------------------------------------------
 
 window.addEventListener("DOMContentLoaded", function () {
     var token = sessionStorage.getItem("token");
@@ -274,7 +270,17 @@ window.addEventListener("DOMContentLoaded", function () {
 
     // O Membro da Equipe não cadastra demandas, então o botão some para ele
     // (quem bloqueia de verdade é o servidor, com 403).
-    document.getElementById("botao-nova-demanda").hidden = usuario.perfil === "Membro da Equipe";
+    // O "hidden" sozinho não basta: o dashboard.css define "display: inline-block"
+    // para este botão, e essa regra vence o "display: none" padrão do "hidden".
+    // O style.display escrito direto no elemento vence as regras do arquivo .css.
+    var botaoNovaDemanda = document.getElementById("botao-nova-demanda");
+    if (usuario.perfil === "Membro da Equipe") {
+        botaoNovaDemanda.hidden = true;
+        botaoNovaDemanda.style.display = "none";
+    } else {
+        botaoNovaDemanda.hidden = false;
+        botaoNovaDemanda.style.display = "";
+    }
 
     var dashboard = new Dashboard(token);
     var formulario = document.getElementById("form-filtros");
