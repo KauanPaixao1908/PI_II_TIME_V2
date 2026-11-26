@@ -82,11 +82,10 @@ A versão final está na branch `main`, que é a branch padrão do repositório:
 git clone https://github.com/KauanPaixao1908/PI_II_TIME_V2.git
 cd PI_II_TIME_V2
 ```
-
-Para usar exatamente a versão entregue à banca (tag `1.0.0-final`):
-
+Ou
 ```
-git switch --detach 1.0.0-final
+Baixar a versão final
+1.0.0-final
 ```
 
 Também é possível baixar a versão final em ZIP pela página **Tags** do repositório no GitHub.
